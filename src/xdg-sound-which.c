@@ -162,12 +162,12 @@ typedef enum {
 	CommandHelp,
 	CommandVersion,
 	CommandCopying,
-} CommandType;
+} Command;
 
 typedef struct {
 	int debug;
 	int output;
-	CommandType command;
+	Command command;
 	int noplay;
 	int all;
 	int skipdot;
@@ -175,6 +175,7 @@ typedef struct {
 	int showdot;
 	int showtilde;
 	char **eventids;
+	char *theme;
 } Options;
 
 Options options = {
@@ -188,6 +189,7 @@ Options options = {
 	.showdot = 0,
 	.showtilde = 0,
 	.eventids = NULL,
+	.theme = NULL,
 };
 
 /** @} */
@@ -249,7 +251,7 @@ list_paths(void)
 		strncat(list, ":", PATH_MAX);
 		strncat(list, dirs, PATH_MAX);
 	}
-	for (dirs = list; !path && *dirs) {
+	for (dirs = list; !path && *dirs;) {
 		char *p;
 
 		if (*dirs == '.' && options.skipdot)
@@ -310,12 +312,6 @@ do_which(int argc, char *argv[])
 {
 	(void) argc;
 	(void) argv;
-}
-
-static void
-do_command(int argc, char *argv[])
-{
-	return do_which(argc, argv);
 }
 
 /** @section Main
@@ -447,6 +443,11 @@ General Options:\n\
         print tildes instead of full path\n\
     --theme, -N THEME\n\
         use sound theme named THEME\n\
+    --debug, -D [LEVEL]\n\
+        increment or set debug LEVEL\n\
+    --verbose, -v [LEVEL]\n\
+        increment or set output verbosity LEVEL\n\
+	this option may be repeated\n\
 ", argv[0]);
 }
 
@@ -454,13 +455,12 @@ int
 main(int argc, char *argv[])
 {
 	Command command = CommandDefault;
-	char *buf;
 
 	setlocale(LC_ALL, "");
 
 	while (1) {
 		int c, val;
-		char *endptr = NULL;
+		char *endptr;
 
 #ifdef _GNU_SOURCE
 		int option_index = 0;
@@ -505,7 +505,7 @@ main(int argc, char *argv[])
 
 		case 'l':	/* -l, --list */
 			if (options.command != CommandDefault)
-				goto bad_option;
+				goto bad_command;
 			if (command == CommandDefault)
 				command = CommandList;
 			options.command = CommandList;
@@ -513,18 +513,50 @@ main(int argc, char *argv[])
 
 		case 'N':	/* -s, --theme THEME */
 			free(options.theme);
-			defaults.theme = options.theme = strdup(optarg);
+			options.theme = strdup(optarg);
 			break;
 
+		case 'D':	/* -D, --debug [level] */
+			if (options.debug)
+				fprintf(stderr, "%s: increasing debug verbosity\n", argv[0]);
+			if (optarg == NULL) {
+				options.debug++;
+				break;
+			}
+			val = strtol(optarg, &endptr, 0);
+			if (*endptr || val < 0)
+				goto bad_option;
+			options.debug = val;
+			break;
+		case 'v':	/* -v, --verbose [level] */
+			if (options.debug)
+				fprintf(stderr, "%s: increasing output verbosity\n", argv[0]);
+			if (optarg == NULL) {
+				options.output++;
+				break;
+			}
+			val = strtol(optarg, &endptr, 0);
+			if (*endptr || val < 0)
+				goto bad_option;
+			options.output = val;
+			break;
 		case 'h':	/* -h, --help */
 		case 'H':	/* -H, --? */
 			command = CommandHelp;
 			break;
 		case 'V':	/* -V, --version */
-			command = CommandVersion;
+			if (options.command != CommandDefault)
+				goto bad_command;
+			if (command == CommandDefault)
+				command = CommandVersion;
+			options.command = CommandVersion;
 			break;
 		case 'C':	/* -C, --copying */
-			command = CommandCopying;
+			if (options.command != CommandDefault)
+				goto bad_command;
+			if (command == CommandDefault)
+				command = CommandCopying;
+			options.command = CommandCopying;
 			break;
 		case '?':
 		default:
@@ -555,22 +587,41 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s: option index = %d\n", argv[0], optind);
 		fprintf(stderr, "%s: option count = %d\n", argv[0], argc);
 	}
+	if (command == CommandDefault)
+		options.command = CommandWhich;
+	switch (options.command) {
+	case CommandPlay:
+	case CommandWhereis:
+	case CommandWhich:
+		if (optind >= argc) {
+			fprintf(stderr, "%s: EVENTID must be specified\n", argv[0]);
+			goto bad_usage;
+		}
+		break;
+	case CommandList:
+	case CommandShow:
+	case CommandVersion:
+	case CommandCopying:
+		if (optind < argc) {
+			fprintf(stderr, "%s: excess arguments\n", argv[0]);
+			goto bad_nonopt;
+		}
+		break;
+	case CommandDefault:
+	case CommandHelp:
+		break;
+	}
 	if (optind < argc) {
 		int n = argc - optind, j = 0;
 
 		options.eventids = calloc(n + 1, sizeof(*options.eventids));
 		while (optind < argc)
 			options.eventids[j++] = strdup(argv[optind++]);
-	} else if (command == CommandDefault || command == CommandPlay || command == CommandWhich || command == CommandWhereis) {
-		fprintf(stderr, "%s: EVENTID must be specified\n", argv[0]);
-		goto bad_usage;
 	}
 
+	if (command == CommandDefault)
+		command = options.command;
 	switch (command) {
-	case CommandDefault:
-		DPRINTF(1, "%s: running command\n", argv[0]);
-		do_command(argc, argv);
-		break;
 	case CommandPlay:
 		DPRINTF(1, "%s: running play\n", argv[0]);
 		do_play(argc, argv);
@@ -602,6 +653,8 @@ main(int argc, char *argv[])
 	case CommandCopying:
 		DPRINTF(1, "%s: printing copying message\n", argv[0]);
 		copying(argc, argv);
+		break;
+	case CommandDefault:
 		break;
 	}
 	exit(EXIT_SUCCESS);

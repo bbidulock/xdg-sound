@@ -1,5 +1,38 @@
 # created with git log --stat=76 -M -C -500|fmt -sct -w80
 
+commit 24e03bb076c1da67e2b3a3d74c6b3ad10456ee17
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Wed Apr 15 03:39:30 2020 -0600
+
+    correct
+
+ src/Makefile.am | 5 -----
+ 1 file changed, 5 deletions(-)
+
+commit a19a3a3854658d225ab4c248ae13585ede41ff17
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Wed Apr 15 03:38:44 2020 -0600
+
+    updates
+
+ .gitignore                              |   1 +
+ ChangeLog                               |  13 ++
+ NEWS                                    |   3 +-
+ man/xdg-play.pod                        |  90 ++++++++
+ man/xdg-sound-list.pod                  |  51 +++++
+ man/xdg-sound-whereis.pod               |  51 +++++
+ man/xdg-sound-which.pod                 |  56 ++++-
+ src/.xdg-play.c.swp                     | Bin 32768 -> 0 bytes
+ src/Makefile.am                         |  30 ++-
+ src/xdg-play.c                          | 320 +++++++++++++++++++++++++--
+ src/xdg-sound-list                      |   6 -
+ src/{xdg-play.c => xdg-sound-list.c}    | 323 +++++++++++++++++++++++-----
+ src/xdg-sound-whereis                   |   6 -
+ src/{xdg-play.c => xdg-sound-whereis.c} | 320 ++++++++++++++++++++++-----
+ src/xdg-sound-which                     |   6 -
+ src/{xdg-play.c => xdg-sound-which.c}   | 320 ++++++++++++++++++++++-----
+ 16 files changed, 1391 insertions(+), 205 deletions(-)
+
 commit 53a8c207cb69e13e1b5c0dd8018e9711ca3d52ed
 Author: Brian Bidulock <bidulock@openss7.org>
 Date:   Tue Apr 14 23:40:08 2020 -0600

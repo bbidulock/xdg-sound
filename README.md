@@ -1,9 +1,9 @@
-[xdg-sound -- read me first file.  2020-04-14]: #
+[xdg-sound -- read me first file.  2020-04-15]: #
 
 xdg-sound
 ===============
 
-Package `xdg-sound-1.0` was released under GPLv3 license 2020-04-14.
+Package `xdg-sound-1.0` was released under GPLv3 license 2020-04-15.
 
 This is a "C"-language program that can be used to launch XDG desktop
 applications with full startup notification and window manager
@@ -20,7 +20,7 @@ wrapper scripts.
 Release
 -------
 
-This is the `xdg-sound-1.0` package, released 2020-04-14.  This
+This is the `xdg-sound-1.0` package, released 2020-04-15.  This
 release, and the latest version, can be obtained from [GitHub][1], using
 a command such as:
 
