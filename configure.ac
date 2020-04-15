@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([xdg-launch],[1.10],[https://github.com/bbidulock/xdg-launch],[xdg-launch],[https://github.com/bbidulock/xdg-launch/issues])
-AC_REVISION([1.10])
+AC_INIT([xdg-sound],[1.0],[https://github.com/bbidulock/xdg-sound],[xdg-sound],[https://github.com/bbidulock/xdg-sound/issues])
+AC_REVISION([1.0])
 
 # set better defaults
 AC_PREFIX_DEFAULT([/usr])
@@ -13,20 +13,20 @@ if test "$prefix" = /usr -o "$prefix" = NONE; then
 	test "$localstatedir" = '${prefix}/var' && localstatedir=/var
 fi
 
-AC_CONFIG_SRCDIR([src/xdg-launch.c])
+AC_CONFIG_SRCDIR([src/xdg-play.c])
 AC_CONFIG_HEADERS([autoconf.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([scripts])
 AC_USE_SYSTEM_EXTENSIONS
 AC_CANONICAL_TARGET
 
-DATE='2020-02-08'
+DATE='2020-04-14'
 AC_SUBST([DATE])
 
-MDOCDATE='February 8, 2020'
+MDOCDATE='April 14, 2020'
 AC_SUBST([MDOCDATE])
 
-BRANCH='1.10'
+BRANCH='1.0'
 AC_SUBST([BRANCH])
 
 # Initialize Automake
@@ -189,7 +189,6 @@ AC_SUBST([applicationsdir])
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
 		 man/Makefile
-		 data/Makefile
 		 ])
 
 AC_OUTPUT
