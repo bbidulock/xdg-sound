@@ -1,0 +1,21 @@
+=pod
+
+=head1 BUGS
+
+B<xdg-play> has no known bugs.
+Pleas report bugs to the source code repository at
+L<https://github.com/bbidulock/xdg-sound/issues>.
+
+=head1 SEE ALSO
+
+L<xdg-sound-list(1)>,
+L<xdg-sound-whereis(1)>,
+L<xdg-sound-which(1)>.
+
+=head1 AUTHOR
+
+Brian Bidulock L<mailto:bidulock@openss7.org>
+
+=cut
+
+# vim: set sw=4 tw=72 nocin spell spelllang=en_ca:

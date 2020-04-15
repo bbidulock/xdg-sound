@@ -1,0 +1,54 @@
+=pod
+
+=head1 NAME
+
+xdg-sound - an XDG sound theme compliant sound locator
+
+=head1 SYNOPSIS
+
+B<xdg-sound> [I<OPTIONS>] I<EVENTID> [...]
+
+=head1 DESCRIPTION
+
+B<xdg-sound> is a script that simply executes L<xdg-play(1)> with
+the appropriate arguments (B<--noplay>).
+See L<xdg-play(1)/COMMAND OPTIONS> for more information.
+
+B<xdg-sound> simply prints to standard output the full path of the file
+that would be played by L<xdg-play(1)> when given the same arguments.
+
+=head1 ARGUMENTS
+
+The program accepts the following arguments:
+
+=over
+
+=item I<EVENTID>
+
+Specifies the event identifier of an XDG sound theme event to play.  The
+event identifier, I<EVENTID>, can be one of the following:
+
+=over
+
+=back
+
+=back
+
+=head1 BUGS
+
+B<xdg-sound> has no known bugs.
+Pleas report bugs to the source code repository at
+L<https://github.com/bbidulock/xdg-sound/issues>.
+
+=head1 SEE ALSO
+
+L<xdg-play(1)>.
+
+=head1 AUTHOR
+
+Brian Bidulock L<mailto:bidulock@openss7.org>
+
+=cut
+
+
+# vim: set sw=4 tw=72 nocin spell spelllang=en_ca:

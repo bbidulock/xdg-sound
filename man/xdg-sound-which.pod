@@ -1,0 +1,65 @@
+=pod
+
+=head1 NAME
+
+xdg-snd-which - show the full path of XDG sound entries
+
+=head1 SYNOPSIS
+
+B<xdg-snd-which> [I<OPTIONS>] [--] I<SOUND> [...]
+
+=head1 DESCRIPTION
+
+B<xdg-snd-which> takes one or more arguments.  For each of its
+arguments, it prints to standard output the full path of the sound file
+that would have been played when this argument had been supplied to
+L<xdg-play(1)>.  It does this by searching for a sound entry in the
+appropriate sub-directories of the C<XDG_DATA_DIRS> and C<XDG_DATA_HOME>
+environment variables using the same algorithms as L<xdg-play(1)>.
+
+=head1 ARGUMENTS
+
+The program accepts the following arguments:
+
+=over
+
+=item I<SOUND>
+
+Specifies the event identifier of an XDG sound to locate.  The event
+identifier can be one of the following:
+
+=over
+
+=item 1.
+
+The name of a sound file without any sound-file-specific extension (e.g.
+F<.ogg>) suffix (e.g. F<system-bootup>); the name may contain a C</> if
+it is specified relative to a user or system application directory, in
+which case it must not start with a C</> or C<.>.
+
+=back
+
+=back
+
+B<xdg-sound-which> is a script that simply executes L<xdg-play(1)> with
+the appropriate arguments (B<--which>).
+See L<xdg-sound(1)/COMMAND OPTIONS> for more information.
+=head1 BUGS
+
+B<xdg-sound-which> has no known bugs.
+Pleas report bugs to the source code repository at
+L<https://github.com/bbidulock/xdg-sound/issues>.
+
+=head1 SEE ALSO
+
+L<xdg-play(1)>.
+
+=head1 AUTHOR
+
+Brian Bidulock L<mailto:bidulock@openss7.org>
+
+=cut
+
+=cut
+
+# vim: set sw=4 tw=72 nocin spell spelllang=en_ca:

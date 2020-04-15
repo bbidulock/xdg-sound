@@ -1,0 +1,26 @@
+=pod
+
+=head1 DESCRIPTION
+
+B<xdg-sound-whereis> is a script that simply executes L<xdg-play(1)> with
+the appropriate arguments (B<--whereis>).
+See L<xdg-sound(1)/COMMAND OPTIONS> for more information.
+
+=head1 BUGS
+
+B<xdg-sound-whereis> has no known bugs.
+Pleas report bugs to the source code repository at
+L<https://github.com/bbidulock/xdg-sound/issues>.
+
+=head1 SEE ALSO
+
+L<xdg-play(1)>.
+
+=head1 AUTHOR
+
+Brian Bidulock L<mailto:bidulock@openss7.org>
+
+=cut
+
+
+# vim: set sw=4 tw=72 nocin spell spelllang=en_ca:
