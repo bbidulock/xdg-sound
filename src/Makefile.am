@@ -16,11 +16,6 @@ xdg_sound_list_CFLAGS = $(AM_CFLAGS) $(GLIB2_CFLAGS)
 xdg_sound_list_SOURCES = xdg-sound-list.c
 xdg_sound_list_LDADD = $(GLIB2_LIBS)
 
-xdg_sound_list_CPPFLAGS = -DNAME=\"xdg-sound-list\"
-xdg_sound_list_CFLAGS = $(AM_CFLAGS) $(GLIB2_CFLAGS)
-xdg_sound_list_SOURCES = xdg-sound-list.c
-xdg_sound_list_LDADD = $(GLIB2_LIBS)
-
 xdg_sound_whereis_CPPFLAGS = -DNAME=\"xdg-sound-whereis\"
 xdg_sound_whereis_CFLAGS = $(AM_CFLAGS) $(GLIB2_CFLAGS)
 xdg_sound_whereis_SOURCES = xdg-sound-whereis.c
