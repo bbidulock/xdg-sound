@@ -530,10 +530,7 @@ main(int argc, char *argv[])
 		switch (c) {
 		case 0:
 			goto bad_usage;
-		case 'n':	/* -n, --noplay */
-			options.noplay = 1;
-			break;
-		case 'p':	/* [-p, --play] */
+		case 'p':	/* -p, --play */
 			if (options.command != CommandDefault)
 				goto bad_command;
 			if (command == CommandDefault)
@@ -562,6 +559,9 @@ main(int argc, char *argv[])
 			options.command = CommandWhereis;
 			break;
 
+		case 'n':	/* -n, --noplay */
+			options.noplay = 1;
+			break;
 		case 'l':	/* -l, --list */
 			if (options.command != CommandDefault)
 				goto bad_command;
@@ -570,6 +570,21 @@ main(int argc, char *argv[])
 			options.command = CommandList;
 			break;
 
+		case 'a':	/* -a, --all */
+			options.all = 1;
+			break;
+		case 'o':	/* -o, --skip-dot */
+			options.skipdot = 1;
+			break;
+		case 't':	/* -t, --skip-tilde */
+			options.skiptilde = 1;
+			break;
+		case 'O':	/* -O, --show-dot */
+			options.showdot = 1;
+			break;
+		case 'T':	/* -T, --show-tilde */
+			options.showtilde = 1;
+			break;
 		case 'N':	/* -s, --theme THEME */
 			free(options.theme);
 			options.theme = strdup(optarg);
@@ -646,8 +661,9 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s: option index = %d\n", argv[0], optind);
 		fprintf(stderr, "%s: option count = %d\n", argv[0], argc);
 	}
-	if (options.command == CommandDefault)
-		options.command = CommandPlay;
+	if (command != CommandHelp)
+		if (options.command == CommandDefault)
+			options.command = CommandPlay;
 	switch (options.command) {
 	case CommandPlay:
 	case CommandWhereis:

@@ -466,6 +466,7 @@ main(int argc, char *argv[])
 		int option_index = 0;
 		/* *INDENT-OFF* */
 		static struct option long_options[] = {
+			{"which",	no_argument,		NULL,	'w'},
 			{"noplay",	no_argument,		NULL,	'n'},
 			{"list",	no_argument,		NULL,	'l'},
 
@@ -486,10 +487,10 @@ main(int argc, char *argv[])
 		};
 		/* *INDENT-ON* */
 
-		c = getopt_long_only(argc, argv, "nlaotOTN:D::v::hVCH?", long_options,
+		c = getopt_long_only(argc, argv, "wnlaotOTN:D::v::hVCH?", long_options,
 				     &option_index);
 #else				/* _GNU_SOURCE */
-		c = getopt(argc, argv, "nlaotOTN:DvhVCH?");
+		c = getopt(argc, argv, "wnlaotOTN:DvhVCH?");
 #endif				/* _GNU_SOURCE */
 		if (c == -1) {
 			if (options.debug)
@@ -499,10 +500,38 @@ main(int argc, char *argv[])
 		switch (c) {
 		case 0:
 			goto bad_usage;
+		case 'p':	/* -p, --play */
+			if (options.command != CommandDefault)
+				goto bad_command;
+			if (command == CommandDefault)
+				command = CommandPlay;
+			options.command = CommandPlay;
+			break;
+		case 's':	/* -s, --show */
+			if (options.command != CommandDefault)
+				goto bad_command;
+			if (command == CommandDefault)
+				command = CommandShow;
+			options.command = CommandShow;
+			break;
+		case 'w':	/* -w, --which */
+			if (options.command != CommandDefault)
+				goto bad_command;
+			if (command == CommandDefault)
+				command = CommandWhich;
+			options.command = CommandWhich;
+			break;
+		case 'W':	/* -W, --whereis */
+			if (options.command != CommandDefault)
+				goto bad_command;
+			if (command == CommandDefault)
+				command = CommandWhereis;
+			options.command = CommandWhereis;
+			break;
+
 		case 'n':	/* -n, --noplay */
 			options.noplay = 1;
 			break;
-
 		case 'l':	/* -l, --list */
 			if (options.command != CommandDefault)
 				goto bad_command;
@@ -511,6 +540,21 @@ main(int argc, char *argv[])
 			options.command = CommandList;
 			break;
 
+		case 'a':	/* -a, --all */
+			options.all = 1;
+			break;
+		case 'o':	/* -o, --skip-dot */
+			options.skipdot = 1;
+			break;
+		case 't':	/* -t, --skip-tilde */
+			options.skiptilde = 1;
+			break;
+		case 'O':	/* -O, --show-dot */
+			options.showdot = 1;
+			break;
+		case 'T':	/* -T, --show-tilde */
+			options.showtilde = 1;
+			break;
 		case 'N':	/* -s, --theme THEME */
 			free(options.theme);
 			options.theme = strdup(optarg);
@@ -587,8 +631,9 @@ main(int argc, char *argv[])
 		fprintf(stderr, "%s: option index = %d\n", argv[0], optind);
 		fprintf(stderr, "%s: option count = %d\n", argv[0], argc);
 	}
-	if (command == CommandDefault)
-		options.command = CommandWhich;
+	if (command != CommandHelp)
+		if (command == CommandDefault)
+			options.command = CommandWhich;
 	switch (options.command) {
 	case CommandPlay:
 	case CommandWhereis:
