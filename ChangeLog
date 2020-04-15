@@ -1,0 +1,44 @@
+# created with git log --stat=76 -M -C -500|fmt -sct -w80
+
+commit 906745a0ddcb34e2b94d2e9d4b29e4d9df294487
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Tue Apr 14 23:37:24 2020 -0600
+
+    update
+
+ COPYING      | 674 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ configure.ac |  13 +-
+ 2 files changed, 680 insertions(+), 7 deletions(-)
+
+commit 96996a1b53d073165287c79e62bebaeebd56c753
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Tue Apr 14 23:35:12 2020 -0600
+
+    Initial commit
+
+ .gitignore                |  67 +++++++
+ Makefile.am               |  84 +++++++++
+ README.md.in              | 156 +++++++++++++++++
+ RELEASE.md                |  20 +++
+ THANKS                    |   5 +
+ TODO                      |   7 +
+ autogen.sh                |  44 +++++
+ configure.ac              | 197 +++++++++++++++++++++
+ configure.sh              |  37 ++++
+ dist.sh                   |   9 +
+ gennews.sh                |  50 ++++++
+ man/Makefile.am           |  31 ++++
+ man/xdg-play.pod          |  21 +++
+ man/xdg-sound-list.pod    |  26 +++
+ man/xdg-sound-whereis.pod |  26 +++
+ man/xdg-sound-which.pod   |  65 +++++++
+ man/xdg-sound.pod         |  54 ++++++
+ rebuild.sh                |  11 ++
+ src/.xdg-play.c.swp       | Bin 0 -> 32768 bytes
+ src/Makefile.am           |  16 ++
+ src/xdg-play.c            | 394 ++++++++++++++++++++++++++++++++++++++++++
+ src/xdg-sound             |   6 +
+ src/xdg-sound-list        |   6 +
+ src/xdg-sound-whereis     |   6 +
+ src/xdg-sound-which       |   6 +
+ 25 files changed, 1344 insertions(+)
