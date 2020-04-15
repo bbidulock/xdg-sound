@@ -1,5 +1,23 @@
 # created with git log --stat=76 -M -C -500|fmt -sct -w80
 
+commit 299f60bfe24fbb9c20d7d5fe03be9b69078dee66
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Wed Apr 15 04:08:41 2020 -0600
+
+    updates
+
+ .gitignore              |   3 ++
+ AUTHORS                 |   2 +-
+ ChangeLog               |  33 ++++++++++++++
+ NEWS                    |   8 ++--
+ README.md               |   6 +--
+ configure.ac            |   4 +-
+ src/xdg-play.c          | 104 +++++++++++++++++++++++++++++++++-----------
+ src/xdg-sound-list.c    |  97 +++++++++++++++++++++++++++++++----------
+ src/xdg-sound-whereis.c |  97 +++++++++++++++++++++++++++++++----------
+ src/xdg-sound-which.c   |  97 +++++++++++++++++++++++++++++++----------
+ 10 files changed, 351 insertions(+), 100 deletions(-)
+
 commit 24e03bb076c1da67e2b3a3d74c6b3ad10456ee17
 Author: Brian Bidulock <bidulock@openss7.org>
 Date:   Wed Apr 15 03:39:30 2020 -0600
