@@ -315,7 +315,7 @@ do_which(int argc, char *argv[])
 static void
 do_command(int argc, char *argv[])
 {
-	return do_play(argc, argv);
+	return do_show(argc, argv);
 }
 
 /** @section Main
@@ -415,25 +415,13 @@ help(int argc, char *argv[])
 		return;
 	(void) fprintf(stdout, "\
 Usage:\n\
-    %1$s [options] [{-p|--play}]    [--] EVENTID [...]\n\
-    %1$s [options] [{-w|--which}]   [--] EVENTID [...]\n\
-    %1$s [options] [{-W|--whereis}] [--] EVENTID [...]\n\
     %1$s [options] [{-s|--show}]\n\
     %1$s [options] {-l|--list}\n\
     %1$s {-h|--help}\n\
     %1$s {-V|--version}\n\
     %1$s {-C|--copying}\n\
-Arguments:\n\
-    EVENTID\n\
-        the event identifier of XDG sound to play or locate\n\
 Command Options:\n\
-   [--play, -p]\n\
-        play the specified sound files\n\
-    --which, -w\n\
-        print which sound file would be played\n\
-    --whereis, -W\n\
-        print which sound files could be played\n\
-    --show, -s\n\
+   [--show, -s]\n\
         list available sound files\n\
     --list, -l\n\
         print list of effective lookup paths\n\
@@ -444,8 +432,6 @@ Command Options:\n\
     --copying, -C\n\
         print copying permission and exit\n\
 General Options:\n\
-    --noplay, -n\n\
-        do not play sound, just print sound or file path\n\
     --all, -a\n\
         print all matching sound entries\n\
     --skip-dot, -o\n\
@@ -469,21 +455,6 @@ main(int argc, char *argv[])
 
 	setlocale(LC_ALL, "");
 
-	buf = basename(argv[0]);
-	if (!strcmp(buf, "xdg-sound")) {
-		options.noplay = 1;
-		command = options.command = CommandPlay;
-	} else if (!strcmp(buf, "xdg-sound-list")) {
-		options.noplay = 1;
-		command = options.command = CommandShow;
-	} else if (!strcmp(buf, "xdg-sound-whereis")) {
-		options.noplay = 1;
-		command = options.command = CommandWhereis;
-	} else if (!strcmp(buf, "xdg-sound-which")) {
-		options.noplay = 1;
-		command = options.command = CommandWhich;
-	}
-
 	while (1) {
 		int c, val;
 		char *endptr = NULL;
@@ -492,10 +463,6 @@ main(int argc, char *argv[])
 		int option_index = 0;
 		/* *INDENT-OFF* */
 		static struct option long_options[] = {
-			{"play",	no_argument,		NULL,	'p'},
-			{"show",	no_argument,		NULL,	's'},
-			{"which",	no_argument,		NULL,	'w'},
-			{"whereis",	no_argument,		NULL,	'W'},
 			{"noplay",	no_argument,		NULL,	'n'},
 			{"list",	no_argument,		NULL,	'l'},
 
@@ -516,10 +483,10 @@ main(int argc, char *argv[])
 		};
 		/* *INDENT-ON* */
 
-		c = getopt_long_only(argc, argv, "pswWnlaotOTN:D::v::hVCH?", long_options,
+		c = getopt_long_only(argc, argv, "nlaotOTN:D::v::hVCH?", long_options,
 				     &option_index);
 #else				/* _GNU_SOURCE */
-		c = getopt(argc, argv, "pswWnlaotOTN:DvhVCH?");
+		c = getopt(argc, argv, "nlaotOTN:DvhVCH?");
 #endif				/* _GNU_SOURCE */
 		if (c == -1) {
 			if (options.debug)
@@ -531,34 +498,6 @@ main(int argc, char *argv[])
 			goto bad_usage;
 		case 'n':	/* -n, --noplay */
 			options.noplay = 1;
-			break;
-		case 'p':	/* [-p, --play] */
-			if (options.command != CommandDefault)
-				goto bad_option;
-			if (command == CommandDefault)
-				command = CommandPlay;
-			options.command = CommandPlay;
-			break;
-		case 's':	/* -s, --show */
-			if (options.command != CommandDefault)
-				goto bad_option;
-			if (command == CommandDefault)
-				command = CommandShow;
-			options.command = CommandShow;
-			break;
-		case 'w':	/* -w, --which */
-			if (options.command != CommandDefault)
-				goto bad_option;
-			if (command == CommandDefault)
-				command = CommandWhich;
-			options.command = CommandWhich;
-			break;
-		case 'W':	/* -W, --whereis */
-			if (options.command != CommandDefault)
-				goto bad_option;
-			if (command == CommandDefault)
-				command = CommandWhereis;
-			options.command = CommandWhereis;
 			break;
 
 		case 'l':	/* -l, --list */
@@ -619,7 +558,7 @@ main(int argc, char *argv[])
 		options.eventids = calloc(n + 1, sizeof(*options.eventids));
 		while (optind < argc)
 			options.eventids[j++] = strdup(argv[optind++]);
-	} else if (command == CommandDefault || command == CommandPlay || command == CommandWhich || command == CommandWhereis) {
+	} else if (command == CommandPlay || command == CommandWhich || command == CommandWhereis) {
 		fprintf(stderr, "%s: EVENTID must be specified\n", argv[0]);
 		goto bad_usage;
 	}

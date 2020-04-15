@@ -1,6 +1,0 @@
-#!/bin/sh
-
-prog="xdg-sound"
-dir=$(dirname "$0")
-test -x "$dir/$prog" && prog="$dir/$prog"
-exec $prog --whereis $@

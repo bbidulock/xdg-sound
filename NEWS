@@ -5,7 +5,8 @@ Release xdg-sound-1.0 released 2020-04-14
 
 git shortlog -e -n -w80,6,8 1.0
 
-Brian Bidulock <bidulock@openss7.org> (2):
+Brian Bidulock <bidulock@openss7.org> (3):
       Initial commit
       update
+      update release files
 
