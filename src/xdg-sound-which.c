@@ -167,6 +167,7 @@ typedef enum {
 typedef struct {
 	int debug;
 	int output;
+	int info;
 	Command command;
 	int noplay;
 	int all;
@@ -182,6 +183,7 @@ typedef struct {
 Options options = {
 	.debug = 0,
 	.output = 1,
+	.info = 0,
 	.command = CommandDefault,
 	.noplay = 0,
 	.all = 0,
@@ -852,6 +854,113 @@ do_which(int argc, char *argv[])
   * @{ */
 
 static void
+set_default_profile(void)
+{
+	free(options.profile);
+	options.profile = strdup("stereo");
+}
+
+static void
+set_default_theme(void)
+{
+	char *files, *end, *file;
+	Entry *entry;
+	int n;
+
+	files = calloc(PATH_MAX, sizeof(*files));
+	strcpy(files, getenv("GTK2_RC_FILES") ? : "/usr/share/gtk-2.0/gtkrc");
+	if (*files)
+		strcat(files, ":");
+	strcat(files, getenv("HOME"));
+	strcat(files, "/.gtkrc-2.0");
+	strcat(files, ":");
+	strcat(files, getenv("HOME"));
+	strcat(files, "/.gtkrc-2.0.xde");
+
+	end = files + strlen(files);
+	for (n = 0, file = files; file < end; n++,
+	     *strchrnul(file, ':') = '\0', file += strlen(file) + 1) ;
+
+	for (n = 0, file = files; file < end; n++, file += strlen(file) + 1) {
+		struct stat st;
+		FILE *f;
+		char *buf, *b, *e;
+
+		if (stat(file, &st)) {
+			DPRINTF(1, "%s: %s: %s\n", NAME, file, strerror(errno));
+			continue;
+		}
+		if (!S_ISREG(st.st_mode)) {
+			DPRINTF(1, "%s: %s: not a file\n", NAME, file);
+			continue;
+		}
+		if (!(f = fopen(file, "r"))) {
+			DPRINTF(1, "%s: %s: %s\n", NAME, file, strerror(errno));
+			continue;
+		}
+		DPRINTF(1, "%s: got file %s\n", NAME, file);
+		buf = calloc(PATH_MAX + 1, sizeof(*buf));
+		while (fgets(buf, PATH_MAX, f)) {
+			b = buf;
+			b += strspn(b, " \t");
+			if (*b == '#' || *b == '\n')
+				continue;
+			if (strncmp(b, "gtk-sound-theme-name", 20))
+				continue;
+			b += 20;
+			b += strspn(b, " \t");
+			if (*b != '=')
+				continue;
+			b += 1;
+			b += strspn(b, " \t");
+			if (*b != '"')
+				continue;
+			b += 1;
+			e = b;
+			while ((e = strchr(e, '"'))) {
+				if (*(e - 1) != '\\')
+					break;
+				memmove(e - 1, e, strlen(e) + 1);
+			}
+			if (!e || b >= e)
+				continue;
+			*e = '\0';
+			memmove(buf, b, strlen(b) + 1);
+			if ((entry = lookup_index(buf, NULL))) {
+				OPRINTF(1, "%s: found theme from %s %s\n", NAME, file, buf);
+				free(options.theme);
+				options.theme = strdup(buf);
+				free_entry(entry);
+			}
+		}
+		fclose(f);
+		free(buf);
+	}
+	free(files);
+	if (!options.theme)
+		DPRINTF(1, "%s: could not find theme\n", NAME);
+	else
+		DPRINTF(1, "%s: found theme %s\n", NAME, options.theme);
+	return;
+}
+
+static void
+set_defaults(int argc, char *argv[])
+{
+	(void) argc;
+	(void) argv;
+	set_default_theme();
+	set_default_profile();
+}
+
+static void
+get_defaults(int argc, char *argv[])
+{
+	(void) argc;
+	(void) argv;
+}
+
+static void
 copying(int argc, char *argv[])
 {
 	(void) argc;
@@ -975,16 +1084,21 @@ General Options:\n\
         print dots instead of full path\n\
     --show-tilde, -T\n\
         print tildes instead of full path\n\
-    --theme, -N THEME\n\
+    --theme, -N THEME          [default: %2$s]\n\
         use sound theme named THEME\n\
-    --profile, -P PROFILE\n\
+    --profile, -P PROFILE      [default: %3$s]\n\
         use sound profile named PROFILE\n\
-    --debug, -D [LEVEL]\n\
+    --debug, -D [LEVEL]        [default: %4$d]\n\
         increment or set debug LEVEL\n\
-    --verbose, -v [LEVEL]\n\
+    --verbose, -v [LEVEL]      [default: %5$d]\n\
         increment or set output verbosity LEVEL\n\
 	this option may be repeated\n\
-", argv[0]);
+", argv[0]
+, options.theme
+, options.profile
+, options.debug
+, options.output
+);
 }
 
 int
@@ -993,6 +1107,8 @@ main(int argc, char *argv[])
 	Command command = CommandDefault;
 
 	setlocale(LC_ALL, "");
+
+	set_defaults(argc, argv);
 
 	while (1) {
 		int c, val;
@@ -1204,6 +1320,8 @@ main(int argc, char *argv[])
 		while (optind < argc)
 			options.eventids[j++] = strdup(argv[optind++]);
 	}
+
+	get_defaults(argc, argv);
 
 	if (command == CommandDefault)
 		command = options.command;
