@@ -176,6 +176,7 @@ typedef struct {
 	int showtilde;
 	char **eventids;
 	char *theme;
+	char *profile;
 } Options;
 
 Options options = {
@@ -190,6 +191,7 @@ Options options = {
 	.showtilde = 0,
 	.eventids = NULL,
 	.theme = NULL,
+	.profile = NULL,
 };
 
 /** @} */
@@ -227,6 +229,154 @@ output_path(const char *home, const char *path)
 	free(line);
 	return 1;
 }
+
+/** @brief look up the file from EVENTID
+  *
+  * We search in the sound theme directory first (i.e.  /usr/share/sounds/THEME)
+  * and then in parent theme directories, and then in
+  * /usr/share/sounds/freedesktop theme directory, and then in /usr/share/sounds
+  * itself.
+  */
+static void
+lookup_file(char *name)
+{
+	const gchar *const *locales, *const *locale;
+	char *path = NULL, *eventid, *home, *p;
+	const char *theme, *profile;
+	struct stat st;
+
+	locales = g_get_language_names();
+	home = getenv("HOME") ? : ".";
+	eventid = calloc(PATH_MAX + 1, sizeof(*eventid));
+	strncpy(eventid, name, PATH_MAX);
+	if ((*eventid != '/') && (*eventid != '.')) {
+		for (theme = options.theme ? : "freedesktop";;
+		     theme = strcmp(theme, "freedesktop") ? "freedesktop" : NULL) {
+			for (profile = options.profile ? : "stereo"; profile;
+			     profile = strcmp(profile, "stereo") ? "stereo" : NULL) {
+				if (!theme && strcmp(profile, "stereo"))
+					continue;
+				strncpy(eventid, name, PATH_MAX);
+				for (;;) {
+					for (locale = locales; ; locale++) {
+						char *list, *dirs, *env;
+
+						if (!theme && *locale)
+							continue;
+						/* strip any sound file extension */
+						if ((p = strstr(eventid, ".oga")) == eventid + strlen(eventid) - 4)
+							*p = '\0';
+						if ((p = strstr(eventid, ".ogg")) == eventid + strlen(eventid) - 4)
+							*p = '\0';
+						if ((p = strstr(eventid, ".wav")) == eventid + strlen(eventid) - 4)
+							*p = '\0';
+
+						list = calloc(PATH_MAX + 1, sizeof(*list));
+						dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
+						if ((env = getenv("XDG_DATA_HOME")) && *env)
+							strncpy(list, env, PATH_MAX);
+						else {
+							strncpy(list, home, PATH_MAX);
+							strncat(list, "/.local/share", PATH_MAX);
+						}
+						if (options.skiptilde) {
+							strncpy(list, dirs, PATH_MAX);
+						} else {
+							strncat(list, ":", PATH_MAX);
+							strncat(list, dirs, PATH_MAX);
+						}
+						for (dirs = list; !path && *dirs;) {
+							if (*dirs == '.' && options.skipdot)
+								continue;
+							if (*dirs == '~' && options.skiptilde)
+								continue;
+							if ((p = strchr(dirs, ':'))) {
+								*p = '\0';
+								path = strdup(dirs);
+								dirs = p + 1;
+							} else {
+								path = strdup(dirs);
+								*dirs = '\0';
+							}
+							path = realloc(path, PATH_MAX + 1);
+							strncat(path, "/sounds/", PATH_MAX);
+							if (theme) {
+								strncat(path, theme, PATH_MAX);
+								strncat(path, "/", PATH_MAX);
+								strncat(path, profile, PATH_MAX);
+								strncat(path, "/", PATH_MAX);
+								if (*locale) {
+									strncat(path, *locale, PATH_MAX);
+									strncat(path, "/", PATH_MAX);
+								}
+							}
+							strncat(path, eventid, PATH_MAX);
+							p = path + strlen(path);
+							strcpy(p, ".disabled");
+							DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+							if (!stat(path, &st) && output_path(home, path)
+							    && !options.all) {
+								free(list);
+								free(eventid);
+								free(path);
+								return;
+							}
+							strcpy(p, ".oga");
+							DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+							if (!stat(path, &st) && output_path(home, path)
+							    && !options.all) {
+								free(list);
+								free(eventid);
+								free(path);
+								return;
+							}
+							strcpy(p, ".ogg");
+							DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+							if (!stat(path, &st) && output_path(home, path)
+							    && !options.all) {
+								free(list);
+								free(eventid);
+								free(path);
+								return;
+							}
+							strcpy(p, ".wav");
+							DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+							if (!stat(path, &st) && output_path(home, path)
+							    && !options.all) {
+								free(list);
+								free(eventid);
+								free(path);
+								return;
+							}
+							free(path);
+							path = NULL;
+						}
+						free(list);
+						if (!*locale)
+							break;
+					}
+					if ((p = strrchr(eventid, '-'))) {
+						*p = '\0';
+						continue;
+					}
+					break;
+				}
+			}
+			if (!theme)
+				break;
+		}
+	} else {
+		path = strdup(eventid);
+		DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+		if (!stat(path, &st)) {
+			output_path(home, path);
+		}
+		free(path);
+	}
+	free(eventid);
+	return;
+}
+
 
 static void
 list_paths(void)
@@ -310,8 +460,12 @@ do_whereis(int argc, char *argv[])
 static void
 do_which(int argc, char *argv[])
 {
+	char **eventid;
+
 	(void) argc;
 	(void) argv;
+	for (eventid = options.eventids; eventid && *eventid; eventid++)
+		lookup_file(*eventid);
 }
 
 /** @section Main
@@ -443,6 +597,8 @@ General Options:\n\
         print tildes instead of full path\n\
     --theme, -N THEME\n\
         use sound theme named THEME\n\
+    --profile, -P PROFILE\n\
+        use sound profile named PROFILE\n\
     --debug, -D [LEVEL]\n\
         increment or set debug LEVEL\n\
     --verbose, -v [LEVEL]\n\
@@ -476,6 +632,7 @@ main(int argc, char *argv[])
 			{"show-dot",	no_argument,		NULL,	'O'},
 			{"show-tilde",	no_argument,		NULL,	'T'},
 			{"theme",	required_argument,	NULL,	'N'},
+			{"profile",	required_argument,	NULL,	'P'},
 
 			{"debug",	optional_argument,	NULL,	'D'},
 			{"verbose",	optional_argument,	NULL,	'v'},
@@ -487,10 +644,10 @@ main(int argc, char *argv[])
 		};
 		/* *INDENT-ON* */
 
-		c = getopt_long_only(argc, argv, "wnlaotOTN:D::v::hVCH?", long_options,
+		c = getopt_long_only(argc, argv, "wnlaotOTN:P:D::v::hVCH?", long_options,
 				     &option_index);
 #else				/* _GNU_SOURCE */
-		c = getopt(argc, argv, "wnlaotOTN:DvhVCH?");
+		c = getopt(argc, argv, "wnlaotOTN:P:DvhVCH?");
 #endif				/* _GNU_SOURCE */
 		if (c == -1) {
 			if (options.debug)
@@ -555,9 +712,13 @@ main(int argc, char *argv[])
 		case 'T':	/* -T, --show-tilde */
 			options.showtilde = 1;
 			break;
-		case 'N':	/* -s, --theme THEME */
+		case 'N':	/* -N, --theme THEME */
 			free(options.theme);
 			options.theme = strdup(optarg);
+			break;
+		case 'P':	/* -P, --profile PROFILE */
+			free(options.profile);
+			options.profile = strdup(optarg);
 			break;
 
 		case 'D':	/* -D, --debug [level] */
