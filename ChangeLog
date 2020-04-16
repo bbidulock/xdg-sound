@@ -1,5 +1,60 @@
 # created with git log --stat=76 -M -C -500|fmt -sct -w80
 
+commit 3e46177020636124d91e3664285afed07d6b0bdb
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Thu Apr 16 00:18:24 2020 -0600
+
+    set default sound theme
+
+ src/xdg-sound-which.c | 128 ++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 123 insertions(+), 5 deletions(-)
+
+commit daf9636a9520f4241e30d0eab7a4a46f5e1f8d91
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Wed Apr 15 23:24:41 2020 -0600
+
+    terminology
+
+ man/xdg-sound-which.pod | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit fc34ceeb136611cc13f98f8abcc728a4b347cd31
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Wed Apr 15 23:24:20 2020 -0600
+
+    handle inheritance
+
+ src/xdg-sound-which.c | 386 +++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 383 insertions(+), 3 deletions(-)
+
+commit d2602d29ced4103581814480d0bb3519dccab292
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Wed Apr 15 20:07:20 2020 -0600
+
+    work up program - needs inheritance
+
+ src/xdg-sound-which.c | 167 +++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 164 insertions(+), 3 deletions(-)
+
+commit b3f639f3c7b26a001aa78f8d549591c0313f93e5
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Wed Apr 15 20:07:06 2020 -0600
+
+    update manual page
+
+ man/xdg-sound-which.pod | 116 +++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 103 insertions(+), 13 deletions(-)
+
+commit 34f4cfe204069c3d100f13cd93acada882dd1cd4
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Wed Apr 15 09:52:34 2020 -0600
+
+    update release files
+
+ ChangeLog | 22 ++++++++++++++++++++++
+ NEWS      |  4 +++-
+ 2 files changed, 25 insertions(+), 1 deletion(-)
+
 commit ae49732cd2ebd5f1bb28c95f85563667e0c0fe88
 Author: Brian Bidulock <bidulock@openss7.org>
 Date:   Wed Apr 15 04:22:38 2020 -0600
