@@ -138,7 +138,7 @@ Defaults to the current GTK sound theme.
 
 =item B<-P>, B<--profile> I<PROFILE>
 
-Specify the audio profile to use when looking up event identifiers.
+Specify the output profile to use when looking up event identifiers.
 Defaults, and falls back, to C<stereo>.
 
 =back
