@@ -6,13 +6,13 @@ xdg-snd-which - show the full path of XDG sound entries
 
 =head1 SYNOPSIS
 
-B<xdg-snd-which> [I<OPTIONS>] [--] I<SOUND> [...]
+B< xdg-snd-which> [I<OPTIONS>] [--] I<EVENTID> [...]
+ B<xdg-snd_which> [I<OPTIONS>] {B<-l>|B<--list>}
+ B<xdg-snd_which> {B<-h>|B<--help>}
+ B<xdg-snd_which> {B<-V>|B<--version>}
+ B<xdg-snd_which> {B<-C>|B<--copying>}
 
 =head1 DESCRIPTION
-
-B<xdg-sound-which> is a script that simply executes L<xdg-play(1)> with
-the appropriate arguments (B<--which>).
-See L<xdg-sound(1)/COMMAND OPTIONS> for more information.
 
 B<xdg-snd-which> takes one or more arguments.  For each of its
 arguments, it prints to standard output the full path of the sound file
@@ -27,7 +27,7 @@ The program accepts the following arguments:
 
 =over
 
-=item I<SOUND>
+=item I<EVENTID>
 
 Specifies the event identifier of an XDG sound to locate.  The event
 identifier can be one of the following:
@@ -36,20 +36,57 @@ identifier can be one of the following:
 
 =item 1.
 
-The name of a sound file without any sound-file-specific extension (e.g.
-F<.ogg>) suffix (e.g. F<system-bootup>); the name may contain a C</> if
-it is specified relative to a user or system application directory, in
-which case it must not start with a C</> or C<.>.
+the name of an event identifier without any sound-file-specific
+extension (e.g.  F<.oga>) suffix (e.g. F<system-bootup>); the name may
+contain a C</> if it is specified relative to a user or system
+application directory, in which case it must not start with a C</> or
+C<.>.
+
+=item 2.
+
+the name of an event identifier with a sound-file-specific extension
+(e.g.  F<.oga>) suffix (e.g. F<system-bootup.oga>); the same
+restrictions as (1), above, apply; or,
+
+=item 3.
+
+the full path (absolute or relative) and filename of a sound file (e.g.
+F</usr/share/sounds/freedesktop/stereo/system-bootup.oga>); the full
+path must contain at least one C</> and start with either a C</> or a
+C<.>.
 
 =back
+
+Provide a non-option event identifier argument is mandatory unless a
+non-default command option is specified.
 
 =back
 
 =head1 OPTIONS
 
+The options that are detailed below are recognized by
+B<xdg-sound-which>.  B<xdg-sound-which> uses L<getopt_long_only(3)>, so
+unambiguous abbreviations of long options and long options with a single
+dash are also supported.
+
 =head2 COMMAND OPTIONS
 
+The default is to match the I<EVENTID> and provide output.  When any of
+the following options are specified, the command mode changes:
+
 =over
+
+=item [B<-w>, B<--which>]
+
+When specified, or no command option is specified, print which sound
+file that would be played for the given event identifiers, by
+L<xdg-play(1)>.
+
+=item B<-l>, B<--list>
+
+Instead of search an event identifier, print the directories that will
+be searched for sound themes and sound files in the order in which they
+will be searched.
 
 =item B<-h>, B<--help>
 
@@ -66,6 +103,8 @@ Prints detailed copying permissions and exits.
 =back
 
 =head2 GENERAL OPTIONS
+
+The following general options are recognized:
 
 =over
 
@@ -92,7 +131,59 @@ path.
 
 Output a tilde when a directory matches the C<HOME> directory.
 
+=item B<-N>, B<--theme> I<THEME>
+
+Specify the sound theme to use when looking up event identifiers.
+Defaults to the current GTK sound theme.
+
+=item B<-P>, B<--profile> I<PROFILE>
+
+Specify the audio profile to use when looking up event identifiers.
+Defaults, and falls back, to C<stereo>.
+
 =back
+
+=head1 EXAMPLES
+
+Following are some examples of invocation and output:
+
+ $> xdg-sound-which system-bootup
+ /usr/share/sounds/freedesktop/stereo/system-bootup.oga
+
+ $> xdg-sound-which -a -N unexicon -P 5.1 --show-tilde system-bootup
+ ~/.local/share/sounds/unexicon/stereo/system-bootup.oga
+ /usr/share/sounds/freedesktop/stereo/system-bootup.oga
+
+=head1 ENVIRONMENT
+
+The following environment variables are examined by B<xdg-sound-which>:
+
+=over
+
+=item B<HOME>
+
+Used by B<xdg-sound-which> to determine the user's home directory.
+
+=item B<XDG_DATA_HOME>
+
+Used by B<xdg-sound-which> to determine the user's XDG data directory.
+This defaults to F<$HOME/.local/share>.  The F<sounds> sub-directory
+under this directory is the first searched to locate event sound files.
+See the XDG Sound Theme file specification for more information.
+
+=item B<XDG_DATA_DIRS>
+
+Used by B<xdg-sound-which> to determine the system XDG data directories.
+This defaults to F</usr/local/share:/usr/share>.  The F<sounds>
+sub-directory under these directories are searched in order to locate
+event sound files.  See the XDG Sound Theme file specification for more
+information.
+
+=back
+
+=head1 CAVEATS
+
+B<xdg-sound-which> does not yet search for localized sounds.
 
 =head1 BUGS
 
@@ -102,13 +193,12 @@ L<https://github.com/bbidulock/xdg-sound/issues>.
 
 =head1 SEE ALSO
 
-L<xdg-play(1)>.
+L<xdg-play(1)>,
+L<xdg-sound-whereis(1)>.
 
 =head1 AUTHOR
 
 Brian Bidulock L<mailto:bidulock@openss7.org>
-
-=cut
 
 =cut
 
