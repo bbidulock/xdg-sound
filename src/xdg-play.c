@@ -392,14 +392,15 @@ free_entry(Entry *e)
 }
 
 static Entry *
-parse_file(char *path, const char *profile)
+parse_file(char *path)
 {
 	FILE *file;
 	char buf[4096], *p, *q;
 	int outside_entry = 1;
 	char *section = NULL;
 	char *key, *val, *lang, *llang, *slang;
-	int ok = 0, profile_found = profile ? 0 : 1;
+	int ok = 0, directories_found = 0, in_dir = -1;
+	gchar **s, **subdirs = NULL, **contexts = NULL, **profiles = NULL;
 	Entry *e;
 
 	if (!(e = calloc(1, sizeof(*e))))
@@ -441,11 +442,17 @@ parse_file(char *path, const char *profile)
 			free(section);
 			section = strdup(p + 1);
 			if ((outside_entry = strcmp(section, "Sound Theme")))
-				outside_entry = strcmp(section, "Sound Data");
-			if (outside_entry && profile && !strcmp(section, profile)) {
-				outside_entry = 0;
-				profile_found = 1;
-			}
+				if ((outside_entry = strcmp(section, "Sound Data"))) {
+					for (s = subdirs, in_dir = 0; s && *s; s++, in_dir++) {
+						if (!strcmp(section, *s)) {
+							outside_entry = 0;
+							directories_found++;
+							break;
+						}
+					}
+					if (!s || !*s)
+						in_dir = -1;
+				}
 		}
 		if (outside_entry)
 			continue;
@@ -501,10 +508,24 @@ parse_file(char *path, const char *profile)
 		} else if (strcmp(key, "Inherits") == 0) {
 			free(e->Inherits);
 			e->Inherits = strdup(val);
+			g_strdelimit(e->Inherits, " ,;:", ' ');
+			g_strstrip(e->Inherits);
+			g_strdelimit(e->Inherits, " ", ';');
 			ok = 1;
 		} else if (strcmp(key, "Directories") == 0) {
 			free(e->Directories);
 			e->Directories = strdup(val);
+			g_strdelimit(e->Directories, " ,;:", ' ');
+			g_strstrip(e->Directories);
+			g_strdelimit(e->Directories, " ", ';');
+			g_strfreev(subdirs);
+			subdirs = g_strsplit(e->Directories, ";", -1);
+			g_strfreev(contexts);
+			contexts = g_strdupv(subdirs);
+			for (s = contexts; s && *s; s++)
+				*(*s) = '\0';
+			g_strfreev(profiles);
+			profiles = g_strdupv(contexts);
 			ok = 1;
 		} else if (strcmp(key, "Hidden") == 0) {
 			free(e->Hidden);
@@ -515,13 +536,25 @@ parse_file(char *path, const char *profile)
 			e->Example = strdup(val);
 			ok = 1;
 		} else if (strcmp(key, "Context") == 0) {
-			free(e->Context);
-			e->Context = strdup(val);
-			ok = 1;
+			if (contexts && in_dir >= 0) {
+				free(contexts[in_dir]);
+				contexts[in_dir] = strdup(val);
+				g_free(e->Context);
+				e->Context = g_strjoinv(";", contexts);
+				ok = 1;
+			} else {
+				EPRINTF("found Context=%s but not in directory section (%s [%d])\n", val, section, in_dir);
+			}
 		} else if (strcmp(key, "OutputProfile") == 0) {
-			free(e->OutputProfile);
-			e->OutputProfile = strdup(val);
-			ok = 1;
+			if (profiles && in_dir >= 0) {
+				free(profiles[in_dir]);
+				profiles[in_dir] = strdup(val);
+				g_free(e->OutputProfile);
+				e->OutputProfile = g_strjoinv(";", profiles);
+				ok = 1;
+			} else {
+				EPRINTF("found OutputProfile=%s but not in directory section (%s [%d])\n", val, section, in_dir);
+			}
 		} else if (strstr(key, "DisplayName") == key) {
 			if (strcmp(key, "DisplayName") == 0) {
 				free(e->DisplayName);
@@ -544,7 +577,10 @@ parse_file(char *path, const char *profile)
 		}
 	}
 	fclose(file);
-	if (ok && profile_found)
+	g_strfreev(subdirs);
+	g_strfreev(contexts);
+	g_strfreev(profiles);
+	if (ok)
 		return (e);
 	free_entry(e);
 	return (NULL);
@@ -594,7 +630,7 @@ output_path(const char *home, const char *path)
   * encountered in XDG data directory search order.
   */
 Entry *
-lookup_index(const char *theme, const char *profile)
+lookup_index(const char *theme)
 {
 	char *path = NULL, *home, *p;
 	struct stat st;
@@ -636,7 +672,7 @@ lookup_index(const char *theme, const char *profile)
 		strncat(path, theme, PATH_MAX);
 		strncat(path, "/index.theme", PATH_MAX);
 		if (!stat(path, &st)) {
-			if ((e = parse_file(path, profile))) {
+			if ((e = parse_file(path))) {
 				free(list);
 				free(path);
 				return (e);
@@ -658,7 +694,6 @@ on_list(char *themes, const char *theme)
 
 	for (current = themes; *current; ) {
 		if ((p = strchr(current, ';'))) {
-			*p = '\0';
 			if (!strncmp(current, theme, len))
 				return (1);
 			current = p + 1;
@@ -674,22 +709,31 @@ on_list(char *themes, const char *theme)
 static void
 lookup_theme(char *themes, const char *theme)
 {
-	char *inherits, *parents, *p;
+	char *inherits, *saveptr = NULL;
 
-	if (!theme)
+	if (!theme) {
+		EPRINTF("called with a null theme!\n");
 		return;
-	if (!strcmp(theme, "freedesktop"))
+	}
+	if (!strcmp(theme, "freedesktop")) {
+		EPRINTF("called with a fallback theme '%s'\n", theme);
 		return;
+	}
 	/* break inheritance loop */
-	if (on_list(themes, theme))
+	if (on_list(themes, theme)) {
+		EPRINTF("theme %s already on list '%s'\n", theme, themes);
 		return;
+	}
+	DPRINTF(1, "adding theme %s to list\n", theme);
+	DPRINTF(1, "theme list was '%s'\n", themes);
 	if (*themes)
 		strncat(themes, ";", PATH_MAX);
 	strncat(themes, theme, PATH_MAX);
+	DPRINTF(1, "theme list now '%s'\n", themes);
 	{
 		Entry *e;
 
-		if (!(e = lookup_index(theme, NULL)))
+		if (!(e = lookup_index(theme)))
 			return;
 		if (!e->Inherits) {
 			free_entry(e);
@@ -701,22 +745,10 @@ lookup_theme(char *themes, const char *theme)
 		}
 		free_entry(e);
 	}
-	while (*inherits == ';')
-		memmove(inherits, inherits + 1, strlen(inherits) - 1);
-	for (p = inherits + strlen(inherits); p > inherits && *p == ';'; p--)
-		*p = '\0';
 	DPRINTF(1, "theme %s inherits '%s'\n", theme, inherits);
-	for (parents = inherits; *parents;) {
-		if ((p = strchr(parents, ';'))) {
-			*p = '\0';
-			theme = parents;
-			parents = p + 1;
-		} else {
-			theme = parents;
-			parents = parents + strlen(parents);
-		}
+	/* technically these should be semicolon separated, some sometimes aren't */
+	for (theme = strtok_r(inherits, " ,;:", &saveptr); theme; theme = strtok_r(NULL, " ,;:", &saveptr))
 		lookup_theme(themes, theme);
-	}
 	free(inherits);
 	return;
 }
@@ -735,6 +767,66 @@ lookup_themes(void)
 	return (themes);
 }
 
+static void
+lookup_subdir(char *subdirs, const char *theme, const char *profile)
+{
+	char *dirs, *dirsaveptr = NULL, *pfls, *pflsaveptr = NULL;
+	char *dir, *pfl;
+
+	if (!theme)
+		return;
+	{
+		Entry *e;
+
+		if (!(e = lookup_index(theme))) {
+			EPRINTF("could not lookup index file for theme '%s'!\n", theme);
+			return;
+		}
+		if (!e->Directories) {
+			EPRINTF("no directories!\n");
+			free_entry(e);
+			return;
+		}
+		if (!e->OutputProfile) {
+			EPRINTF("no output profiles!\n");
+			free_entry(e);
+			return;
+		}
+		if (!(dirs = strdup(e->Directories)) || !(pfls = strdup(e->OutputProfile))) {
+			EPRINTF("cannot dup strings!\n");
+			free_entry(e);
+			return;
+		}
+		free_entry(e);
+	}
+	DPRINTF(1, "theme %s dirs '%s'\n", theme, dirs);
+	DPRINTF(1, "theme %s pfls '%s'\n", theme, pfls);
+	/* technically these should be semicolon separated, some sometimes aren't */
+	for (dir = strtok_r(dirs, " ,;:", &dirsaveptr), pfl = strtok_r(pfls, " ,;:", &pflsaveptr);
+	     dir && pfl;
+	     dir = strtok_r(NULL, " ,;:", &dirsaveptr), pfl = strtok_r(NULL, " ,;:", &pflsaveptr)) {
+		DPRINTF(1, "checking profile '%s' for subdir '%s'\n", pfl, dir);
+		if (!strcmp(pfl, profile)) {
+			if (*subdirs)
+				strncat(subdirs, ";", PATH_MAX);
+			strncat(subdirs, dir, PATH_MAX);
+		}
+	}
+	free(dirs);
+	free(pfls);
+	return;
+}
+
+static char *
+lookup_subdirs(const char *theme, const char *profile)
+{
+	char *subdirs;
+
+	subdirs = calloc(PATH_MAX + 1, sizeof(*subdirs));
+	lookup_subdir(subdirs, theme, profile);
+	return (subdirs);
+}
+
 /** @brief look up the file from EVENTID
   *
   * We search in the sound theme directory first (i.e.  /usr/share/sounds/THEME)
@@ -746,8 +838,8 @@ static void
 lookup_file(const char *name)
 {
 	const gchar *const *locales, *const *locale;
-	char *path = NULL, *eventid, *home, *p, *tlist, *themes;
-	const char *theme, *profile;
+	char *path = NULL, *eventid, *home, *p, *tlist, *themes, *slist, *subdirs;
+	const char *theme, *profile, *subdir;
 	struct stat st;
 
 	locales = g_get_language_names();
@@ -757,7 +849,7 @@ lookup_file(const char *name)
 	eventid = calloc(PATH_MAX + 1, sizeof(*eventid));
 	strncpy(eventid, name, PATH_MAX);
 	if ((*eventid != '/') && (*eventid != '.')) {
-		for (themes = tlist; ;) {
+		for (themes = tlist;;) {
 			if (!*themes) {
 				theme = NULL;
 			} else if ((p = strchr(themes, ';'))) {
@@ -773,126 +865,150 @@ lookup_file(const char *name)
 			else
 				DPRINTF(1, "searching without a theme\n");
 			for (profile = options.profile ? : "stereo"; profile;
-			     profile = strcmp(profile, "stereo") ? "stereo" : NULL) {
-				if (!theme && strcmp(profile, "stereo"))
+			     profile = !*profile ? (strcmp(profile, "stereo") ? "stereo" : "") : NULL) {
+				if (!theme && *profile) {
+					DPRINTF(1, "skipping profile '%s' for null theme\n", profile);
 					continue;
-				strncpy(eventid, name, PATH_MAX);
-				for (;;) {
-					for (locale = locales; ; locale++) {
-						char *list, *dirs, *env;
-
-						if (!theme && *locale)
-							continue;
-						/* strip any sound file extension */
-						if ((p = strstr(eventid, ".disabled")) == eventid + strlen(eventid) - 9)
-							*p = '\0';
-						if ((p = strstr(eventid, ".oga")) == eventid + strlen(eventid) - 4)
-							*p = '\0';
-						if ((p = strstr(eventid, ".ogg")) == eventid + strlen(eventid) - 4)
-							*p = '\0';
-						if ((p = strstr(eventid, ".wav")) == eventid + strlen(eventid) - 4)
-							*p = '\0';
-						if ((p = strstr(eventid, ".sound")) == eventid + strlen(eventid) - 6)
-							*p = '\0';
-
-						list = calloc(PATH_MAX + 1, sizeof(*list));
-						dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
-						if ((env = getenv("XDG_DATA_HOME")) && *env)
-							strncpy(list, env, PATH_MAX);
-						else {
-							strncpy(list, home, PATH_MAX);
-							strncat(list, "/.local/share", PATH_MAX);
-						}
-						if (options.skiptilde) {
-							strncpy(list, dirs, PATH_MAX);
-						} else {
-							strncat(list, ":", PATH_MAX);
-							strncat(list, dirs, PATH_MAX);
-						}
-						for (dirs = list; !path && *dirs;) {
-							if (*dirs == '.' && options.skipdot)
-								continue;
-							if (*dirs == '~' && options.skiptilde)
-								continue;
-							if ((p = strchr(dirs, ':'))) {
-								*p = '\0';
-								path = strdup(dirs);
-								dirs = p + 1;
-							} else {
-								path = strdup(dirs);
-								*dirs = '\0';
-							}
-							path = realloc(path, PATH_MAX + 1);
-							strncat(path, "/sounds/", PATH_MAX);
-							if (theme) {
-								strncat(path, theme, PATH_MAX);
-								strncat(path, "/", PATH_MAX);
-								strncat(path, profile, PATH_MAX);
-								strncat(path, "/", PATH_MAX);
-								if (*locale) {
-									strncat(path, *locale, PATH_MAX);
-									strncat(path, "/", PATH_MAX);
-								}
-							}
-							strncat(path, eventid, PATH_MAX);
-							p = path + strlen(path);
-							strcpy(p, ".disabled");
-							DPRINTF(1, "checking '%s'\n", path);
-							if (!stat(path, &st) && output_path(home, path)
-							    && !options.all) {
-								free(list);
-								free(eventid);
-								free(path);
-								free(tlist);
-								return;
-							}
-							strcpy(p, ".oga");
-							DPRINTF(1, "checking '%s'\n", path);
-							if (!stat(path, &st) && output_path(home, path)
-							    && !options.all) {
-								free(list);
-								free(eventid);
-								free(path);
-								free(tlist);
-								return;
-							}
-							strcpy(p, ".ogg");
-							DPRINTF(1, "checking '%s'\n", path);
-							if (!stat(path, &st) && output_path(home, path)
-							    && !options.all) {
-								free(list);
-								free(eventid);
-								free(path);
-								free(tlist);
-								return;
-							}
-							strcpy(p, ".wav");
-							DPRINTF(1, "checking '%s'\n", path);
-							if (!stat(path, &st) && output_path(home, path)
-							    && !options.all) {
-								free(list);
-								free(eventid);
-								free(path);
-								free(tlist);
-								return;
-							}
-							free(path);
-							path = NULL;
-						}
-						free(list);
-						if (!*locale)
-							break;
-					}
-					if ((p = strrchr(eventid, '-'))) {
-						*p = '\0';
-						continue;
-					}
-					break;
 				}
+				slist = lookup_subdirs(theme, profile);
+				DPRINTF(1, "subdir list is '%s' for theme '%s' and profile '%s'\n", slist, theme, profile);
+				for (subdirs = slist;;) {
+					if (!*subdirs) {
+						subdir = NULL;
+						if (theme) {
+							DPRINTF(1, "skipping empty subdir for theme '%s', profile '%s'\n", theme, profile);
+							break;
+						}
+					} else if ((p = strchr(subdirs, ';'))) {
+						*p = '\0';
+						subdir = subdirs;
+						subdirs = p + 1;
+					} else {
+						subdir = subdirs;
+						subdirs = subdirs + strlen(subdirs);
+					}
+					if (subdir)
+						DPRINTF(1, "searching with subdir '%s'\n", subdir);
+					else
+						DPRINTF(1, "searching without a subdir\n");
+					strncpy(eventid, name, PATH_MAX);
+					for (;;) {
+						for (locale = locales;; locale++) {
+							char *list, *dirs, *env;
+
+							if (!theme && *locale)
+								continue;
+							/* strip any sound file extension */
+							if ((p = strstr(eventid, ".disabled")) == eventid + strlen(eventid) - 9)
+								*p = '\0';
+							if ((p = strstr(eventid, ".oga")) == eventid + strlen(eventid) - 4)
+								*p = '\0';
+							if ((p = strstr(eventid, ".ogg")) == eventid + strlen(eventid) - 4)
+								*p = '\0';
+							if ((p = strstr(eventid, ".wav")) == eventid + strlen(eventid) - 4)
+								*p = '\0';
+							if ((p = strstr(eventid, ".sound")) == eventid + strlen(eventid) - 6)
+								*p = '\0';
+
+							list = calloc(PATH_MAX + 1, sizeof(*list));
+							dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
+							if ((env = getenv("XDG_DATA_HOME")) && *env)
+								strncpy(list, env, PATH_MAX);
+							else {
+								strncpy(list, home, PATH_MAX);
+								strncat(list, "/.local/share", PATH_MAX);
+							}
+							if (options.skiptilde) {
+								strncpy(list, dirs, PATH_MAX);
+							} else {
+								strncat(list, ":", PATH_MAX);
+								strncat(list, dirs, PATH_MAX);
+							}
+							for (dirs = list; !path && *dirs;) {
+								if (*dirs == '.' && options.skipdot)
+									continue;
+								if (*dirs == '~' && options.skiptilde)
+									continue;
+								if ((p = strchr(dirs, ':'))) {
+									*p = '\0';
+									path = strdup(dirs);
+									dirs = p + 1;
+								} else {
+									path = strdup(dirs);
+									*dirs = '\0';
+								}
+								path = realloc(path, PATH_MAX + 1);
+								strncat(path, "/sounds/", PATH_MAX);
+								if (theme) {
+									strncat(path, theme, PATH_MAX);
+									strncat(path, "/", PATH_MAX);
+									strncat(path, subdir, PATH_MAX);
+									strncat(path, "/", PATH_MAX);
+									if (*locale) {
+										strncat(path, *locale, PATH_MAX);
+										strncat(path, "/", PATH_MAX);
+									}
+								}
+								strncat(path, eventid, PATH_MAX);
+								p = path + strlen(path);
+								strcpy(p, ".disabled");
+								DPRINTF(1, "checking '%s'\n", path);
+								if (!stat(path, &st) && output_path(home, path) && !options.all) {
+									free(list);
+									free(eventid);
+									free(path);
+									free(tlist);
+									return;
+								}
+								strcpy(p, ".oga");
+								DPRINTF(1, "checking '%s'\n", path);
+								if (!stat(path, &st) && output_path(home, path) && !options.all) {
+									free(list);
+									free(eventid);
+									free(path);
+									free(tlist);
+									return;
+								}
+								strcpy(p, ".ogg");
+								DPRINTF(1, "checking '%s'\n", path);
+								if (!stat(path, &st) && output_path(home, path) && !options.all) {
+									free(list);
+									free(eventid);
+									free(path);
+									free(tlist);
+									return;
+								}
+								strcpy(p, ".wav");
+								DPRINTF(1, "checking '%s'\n", path);
+								if (!stat(path, &st) && output_path(home, path) && !options.all) {
+									free(list);
+									free(eventid);
+									free(path);
+									free(tlist);
+									return;
+								}
+								free(path);
+								path = NULL;
+							}
+							free(list);
+							if (!*locale)
+								break;
+						}
+						if ((p = strrchr(eventid, '-'))) {
+							*p = '\0';
+							continue;
+						}
+						break;
+					}
+					if (!subdir)
+						break;
+				}
+				free(slist);
 			}
 			if (!theme)
 				break;
 		}
+		free(tlist);
 	} else {
 		path = strdup(eventid);
 		DPRINTF(1, "checking '%s'\n", path);
@@ -900,9 +1016,9 @@ lookup_file(const char *name)
 			output_path(home, path);
 		}
 		free(path);
+		free(tlist);
 	}
 	free(eventid);
-	free(tlist);
 	return;
 }
 
@@ -1284,7 +1400,7 @@ set_default_theme(void)
 				continue;
 			*e = '\0';
 			memmove(buf, b, strlen(b) + 1);
-			if ((entry = lookup_index(buf, NULL))) {
+			if ((entry = lookup_index(buf))) {
 				OPRINTF(1, "found theme from %s %s\n", file, buf);
 				free(options.theme);
 				options.theme = strdup(buf);
