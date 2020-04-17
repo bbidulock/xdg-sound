@@ -2,19 +2,19 @@
 
 =head1 NAME
 
-xdg-snd-which - show the full path of XDG sound entries
+xdg-sound-which - show the full path of XDG sound entries
 
 =head1 SYNOPSIS
 
-B< xdg-snd-which> [I<OPTIONS>] [--] I<EVENTID> [...]
- B<xdg-snd_which> [I<OPTIONS>] {B<-l>|B<--list>}
- B<xdg-snd_which> {B<-h>|B<--help>}
- B<xdg-snd_which> {B<-V>|B<--version>}
- B<xdg-snd_which> {B<-C>|B<--copying>}
+B< xdg-sound-which> [I<OPTIONS>] [--] I<EVENTID> [...]
+ B<xdg-sound-which> [I<OPTIONS>] {B<-l>|B<--list>}
+ B<xdg-sound-which> {B<-h>|B<--help>}
+ B<xdg-sound-which> {B<-V>|B<--version>}
+ B<xdg-sound-which> {B<-C>|B<--copying>}
 
 =head1 DESCRIPTION
 
-B<xdg-snd-which> takes one or more arguments.  For each of its
+B<xdg-sound-which> takes one or more arguments.  For each of its
 arguments, it prints to standard output the full path of the sound file
 that would have been played when this argument had been supplied to
 L<xdg-play(1)>.  It does this by searching for a sound entry in the
@@ -87,6 +87,8 @@ L<xdg-play(1)>.
 Instead of search an event identifier, print the directories that will
 be searched for sound themes and sound files in the order in which they
 will be searched.
+
+Output list of effective lookup paths that B<xdg-sound-which> is using.
 
 =item B<-h>, B<--help>
 
@@ -181,10 +183,6 @@ information.
 
 =back
 
-=head1 CAVEATS
-
-B<xdg-sound-which> does not yet search for localized sounds.
-
 =head1 BUGS
 
 B<xdg-sound-which> has no known bugs.
@@ -193,7 +191,9 @@ L<https://github.com/bbidulock/xdg-sound/issues>.
 
 =head1 SEE ALSO
 
+L<getopt_long_only(3)>,
 L<xdg-play(1)>,
+L<xdg-sound-list(1)>,
 L<xdg-sound-whereis(1)>.
 
 =head1 AUTHOR

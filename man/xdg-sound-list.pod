@@ -1,18 +1,42 @@
 =pod
 
+=head1 NAME
+
+xdg-sound-list - list sound files
+
+=head1 SYNOPSIS
+
+B< xdg-sound-list> [I<OPTIONS>]
+ B<xdg-sound-list> [I<OPTIONS>] {B<-l>|B<--list>}
+ B<xdg-sound-list> {B<-h>|B<--help>}
+ B<xdg-sound-list> {B<-V>|B<--version>}
+ B<xdg-sound-list> {B<-C>|B<--copying>}
+
 =head1 DESCRIPTION
 
-B<xdg-sound-list> is a script that simply executes L<xdg-play(1)> with
-the appropriate arguments (B<--list>).
-See L<xdg-sound(1)/COMMAND OPTIONS> for more information.
-
-=head1 ARGUMENTS
+B<xdg-sound-list> locates sound files and lists them.
 
 =head1 OPTIONS
 
+The options that are detailed below are recognized by
+B<xdg-sound-which>.  B<xdg-sound-which> uses L<getopt_long_only(3)>, so
+unambiguous abbreviations of long options and long options with a single
+dash are also supported.
+
 =head2 COMMAND OPTIONS
 
+The default is to list sound files and provide output.  When any of the
+following options are specified, the command mode changes:
+
 =over
+
+=item B<-l>, B<--list>
+
+Instead of search an event identifier, print the directories that will
+be searched for sound themes and sound files in the order in which they
+will be searched.
+
+Output list of effective lookup paths that B<xdg-sound-list> is using.
 
 =item B<-h>, B<--help>
 
@@ -29,6 +53,8 @@ Prints detailed copying permissions and exits.
 =back
 
 =head2 GENERAL OPTIONS
+
+The following general options are recognized:
 
 =over
 
@@ -55,6 +81,114 @@ path.
 
 Output a tilde when a directory matches the C<HOME> directory.
 
+=item B<-N>, B<--theme> I<THEME>
+
+Specify the sound theme to use when looking up event identifiers.
+Defaults to the current GTK sound theme.
+
+=item B<-P>, B<--profile> I<PROFILE>
+
+Specify the output profile to use when looking up event identifiers.
+Defaults, and falls back, to C<stereo>.
+
+=back
+
+=head1 OUTPUT
+
+The format and the output depends on whether B<xdg-sound-list> is
+operating in list mode or normal mode, as follows:
+
+=head2 LIST OUTPUT
+
+When run in B<--list> mode, B<xdg-sound-list> prints the full path of
+directories associated with sound files and themes, depending on the
+settings of other options.  The directories are printed one per line in
+search order.  Note that for sound files, B<xdg-sound-list> will also
+list fallback directories in addition to application directories.
+
+An example follows:
+
+ $> xdg-sound-list -l
+ /home/brian/.local/share/sounds
+ /usr/share/sounds
+
+=head2 NORMAL OUTPUT
+
+When run in sound theme modes, B<xdg-sound-list> will collect all of the
+sound files by event identifier in accordance with XDG specifications.
+It will then print the list, one sound file per line, sorted by
+event identifier.  On each line, the event identifier is printed first,
+immediately followed by a colon C<:> and one space, followed by the full
+path of the F<.disabled>, F<.oga>, F<.ogg>, F<.wav> sound file
+associated with the event identifier.  Note that all event identifiers
+are printed: the F<index.theme> file is not checked for any fields that
+would suppress their display on a launcher, session manager or display
+manager.
+
+An example follows:
+
+ $> xdg-sound-list -S
+
+ desktop-screen-lock: /home/brian/.local/share/sounds/unexicon/stereo/desktop-screen-lock.ogg
+ desktop-screen-unlock: /home/brian/.local/share/sounds/unexicon/stereo/desktop-screen-unlock.ogg
+ desktop-switch-down: /home/brian/.local/share/sounds/unexicon/stereo/desktop-switch-down.ogg
+ desktop-switch-left: /home/brian/.local/share/sounds/unexicon/stereo/desktop-switch-left.ogg
+ desktop-switch-right: /home/brian/.local/share/sounds/unexicon/stereo/desktop-switch-right.ogg
+ desktop-switch-up: /home/brian/.local/share/sounds/unexicon/stereo/desktop-switch-up.ogg
+ lid-close: /home/brian/.local/share/sounds/unexicon/stereo/lid-close.ogg
+ lid-open: /home/brian/.local/share/sounds/unexicon/stereo/lid-open.ogg
+ system-bootup: /home/brian/.local/share/sounds/unexicon/stereo/system-bootup.ogg
+ system-shutdown: /home/brian/.local/share/sounds/unexicon/stereo/system-shutdown.ogg
+ system-shutdown-reboot: /home/brian/.local/share/sounds/unexicon/stereo/system-shutdown-reboot.ogg
+ windowshade: /home/brian/.local/share/sounds/unexicon/stereo/windowshade.ogg
+ audio-channel-front-center: /usr/share/sounds/Smooth/stereo/audio-channel-front-center.oga
+ audio-channel-front-left: /usr/share/sounds/Smooth/stereo/audio-channel-front-left.oga
+ audio-channel-front-right: /usr/share/sounds/Smooth/stereo/audio-channel-front-right.oga
+ audio-channel-rear-center: /usr/share/sounds/Smooth/stereo/audio-channel-rear-center.oga
+ audio-channel-rear-left: /usr/share/sounds/Smooth/stereo/audio-channel-rear-left.oga
+ audio-channel-rear-right: /usr/share/sounds/Smooth/stereo/audio-channel-rear-right.oga
+ audio-channel-side-left: /usr/share/sounds/Smooth/stereo/audio-channel-side-left.oga
+ audio-channel-side-right: /usr/share/sounds/Smooth/stereo/audio-channel-side-right.oga
+ audio-volume-change: /usr/share/sounds/Smooth/stereo/audio-volume-change.oga
+ battery-caution: /usr/share/sounds/Smooth/stereo/battery-caution.oga
+ battery-full: /usr/share/sounds/Smooth/stereo/battery-full.oga
+ battery-low: /usr/share/sounds/Smooth/stereo/battery-low.oga
+ button-pressed: /usr/share/sounds/Smooth/stereo/button-pressed.oga
+ button-released: /usr/share/sounds/Smooth/stereo/button-released.oga
+ button-toggle-off: /usr/share/sounds/Smooth/stereo/button-toggle-off.oga
+ button-toggle-on: /usr/share/sounds/Smooth/stereo/button-toggle-on.oga
+ count-down: /usr/share/sounds/Smooth/stereo/count-down.oga
+ ...
+
+=head1 EXAMPLES
+
+Following are some examples of invocation and output:
+
+=head1 ENVIRONMENT
+
+The following environment variables are examined by B<xdg-sound-list>:
+
+=over
+
+=item B<HOME>
+
+Used by B<xdg-sound-list> to determine the user's home directory.
+
+=item B<XDG_DATA_HOME>
+
+Used by B<xdg-sound-list> to determine the user's XDG data directory.
+This defaults to F<$HOME/.local/share>.  The F<sounds> sub-directory
+under this directory is the first searched to locate event sound files.
+See the XDG Sound Theme file specification for more information.
+
+=item B<XDG_DATA_DIRS>
+
+Used by B<xdg-sound-list> to determine the system XDG data directories.
+This defaults to F</usr/local/share:/usr/share>.  The F<sounds>
+sub-directory under these directories are searched in order to locate
+event sound files.  See the XDG Sound Theme file specification for more
+information.
+
 =back
 
 =head1 BUGS
@@ -65,13 +199,15 @@ L<https://github.com/bbidulock/xdg-sound/issues>.
 
 =head1 SEE ALSO
 
-L<xdg-play(1)>.
+L<getopt_long_only(3)>,
+L<xdg-play(1)>,
+L<xdg-sound-whereis(1)>,
+L<xdg-sound-which(1)>.
 
 =head1 AUTHOR
 
 Brian Bidulock L<mailto:bidulock@openss7.org>
 
 =cut
-
 
 # vim: set sw=4 tw=72 nocin spell spelllang=en_ca:

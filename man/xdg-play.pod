@@ -14,9 +14,60 @@ B< xdg-play> [I<OPTIONS>] [--] I<EVENTID> [...]
  B<xdg-play> {B<-V>|B<--version>}
  B<xdg-play> {B<-C>|B<--copying>}
 
+=head1 DESCRIPTION
+
+=head1 ARGUMENTS
+
+The program accepts the following arguments:
+
+=over
+
+=item I<EVENTID>
+
+Specifies the event identifier of an XDG sound to locate.  The event
+identifier can be one of the following:
+
+=over
+
+=item 1.
+
+the name of an event identifier without any sound-file-specific
+extension (e.g.  F<.oga>) suffix (e.g. F<system-bootup>); the name may
+contain a C</> if it is specified relative to a user or system
+application directory, in which case it must not start with a C</> or
+C<.>.
+
+=item 2.
+
+the name of an event identifier with a sound-file-specific extension
+(e.g.  F<.oga>) suffix (e.g. F<system-bootup.oga>); the same
+restrictions as (1), above, apply; or,
+
+=item 3.
+
+the full path (absolute or relative) and filename of a sound file (e.g.
+F</usr/share/sounds/freedesktop/stereo/system-bootup.oga>); the full
+path must contain at least one C</> and start with either a C</> or a
+C<.>.
+
+=back
+
+Provide a non-option event identifier argument is mandatory unless a
+non-default command option is specified.
+
+=back
+
 =head1 OPTIONS
 
+The options that are detailed below are recognized by
+B<xdg-sound-which>.  B<xdg-sound-which> uses L<getopt_long_only(3)>, so
+unambiguous abbreviations of long options and long options with a single
+dash are also supported.
+
 =head2 COMMAND OPTIONS
+
+The default is to match the I<EVENTID> and provide output.  When any of
+the following options are specified, the command mode changes:
 
 =over
 
@@ -40,6 +91,10 @@ specified by C<XDG_DATA_DIRS> and C<XDG_DATA_HOME>.
 
 =item B<-l>, B<--list>
 
+Instead of search an event identifier, print the directories that will
+be searched for sound themes and sound files in the order in which they
+will be searched.
+
 Output list of effective lookup paths that B<xdg-play> is using.
 
 =item B<-h>, B<--help>
@@ -57,6 +112,8 @@ Prints detailed copying permissions and exits.
 =back
 
 =head2 GENERAL OPTIONS
+
+The following general options are recognized:
 
 =over
 
@@ -83,10 +140,46 @@ path.
 
 Output a tilde when a directory matches the C<HOME> directory.
 
-=item B<-s>, B<--theme> I<THEME>
+=item B<-N>, B<--theme> I<THEME>
 
-Use the sound theme named I<THEME> when looking for sound files
-corresponding to event identifiers.
+Specify the sound theme to use when looking up event identifiers.
+Defaults to the current GTK sound theme.
+
+=item B<-P>, B<--profile> I<PROFILE>
+
+Specify the output profile to use when looking up event identifiers.
+Defaults, and falls back, to C<stereo>.
+
+=back
+
+=head1 EXAMPLES
+
+Following are some examples of invocation and output:
+
+=head1 ENVIRONMENT
+
+The following environment variables are examined by B<xdg-play>:
+
+=over
+
+=item B<HOME>
+
+Used by B<xdg-play> to determine the user's home directory.
+
+=item B<XDG_DATA_HOME>
+
+Used by B<xdg-play> to determine the user's XDG data directory.
+This defaults to F<$HOME/.local/share>.  The F<sounds> sub-directory
+under this directory is the first searched to locate event sound files.
+See the XDG Sound Theme file specification for more information.
+
+=item B<XDG_DATA_DIRS>
+
+Used by B<xdg-play> to determine the system XDG data directories.
+This defaults to F</usr/local/share:/usr/share>.  The F<sounds>
+sub-directory under these directories are searched in order to locate
+event sound files.  See the XDG Sound Theme file specification for more
+information.
 
 =back
 
@@ -98,6 +191,7 @@ L<https://github.com/bbidulock/xdg-sound/issues>.
 
 =head1 SEE ALSO
 
+L<getopt_long_only(3)>,
 L<xdg-sound-list(1)>,
 L<xdg-sound-whereis(1)>,
 L<xdg-sound-which(1)>.

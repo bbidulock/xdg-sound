@@ -175,9 +175,11 @@ typedef struct {
 	int skiptilde;
 	int showdot;
 	int showtilde;
+	int standard;
 	char **eventids;
 	char *theme;
 	char *profile;
+	char *context;
 } Options;
 
 Options options = {
@@ -191,9 +193,11 @@ Options options = {
 	.skiptilde = 0,
 	.showdot = 0,
 	.showtilde = 0,
+	.standard = 0,
 	.eventids = NULL,
 	.theme = NULL,
 	.profile = NULL,
+	.context = NULL,
 };
 
 static const char *SoundThemeFields[] = {
@@ -207,9 +211,10 @@ static const char *SoundThemeFields[] = {
 	"Context",
 	"OutputProfile",
 	"DisplayName",
+	NULL
 };
 
-typedef struct _Entry {
+typedef struct {
 	char *path;
 	char *Name;
 	char *Comment;
@@ -221,6 +226,148 @@ typedef struct _Entry {
 	char *OutputProfile;
 	char *DisplayName;
 } Entry;
+
+typedef struct Event {
+	struct Event *next;
+	char *key;
+	char *file;
+} Event;
+
+Event *events = NULL;   /* single linked list */
+Event **array = NULL;	/* for sorting */
+
+static const char *StandardSoundNames[] = {
+	/* Standard Alert Sounds */
+	"network-connectivity-lost",
+	"network-connectivity-error",
+	"dialog-error",
+	"battery-low",
+	"suspend-error",
+	"software-update-urgent",
+	"power-unplug-battery-low",
+	/* Standard Notifications Sounds */
+	"message-new-instant",
+	"message-new-email",
+	"complete-media-burn",
+	"complete-media-rip",
+	"complete-download",
+	"complete-copy",
+	"complete-scan",
+	"phone-incoming-call",
+	"phone-outgoing-busy",
+	"phone-hangup",
+	"phone-failure",
+	"network-connectivity-established",
+	"system-bootup",
+	"system-ready",
+	"system-shutdown",
+	"search-results",
+	"search-results-empty",
+	"desktop-login",
+	"desktop-logout",
+	"desktop-screen-lock",
+	"desktop-screen-unlock",
+	"service-login",
+	"service-logout",
+	"battery-caution",
+	"battery-full",
+	"dialog-warning",
+	"dialog-information",
+	"dialog-question",
+	"software-update-available",
+	"device-added",
+	"device-removed",
+	"window-new",
+	"power-plug",
+	"power-unplug",
+	"suspend-start",
+	"suspend-resume",
+	"lid-open",
+	"lid-close",
+	"alarm-clock-elapsed",
+	"window-attention-active",
+	"window-attention-inactive",
+	/* Standard Action Sounds */
+	"phone-outgoing-calling",
+	"message-sent-instant",
+	"message-sent-email",
+	"bell-terminal",
+	"bell-window-system",
+	"trash-empty",
+	"item-deleted",
+	"file-trash",
+	"camera-shutter",
+	"camera-focus",
+	"screen-capture",
+	"count-down",
+	"completion-success",
+	"completion-fail",
+	"completion-partial",
+	"completion-rotation",
+	"audio-volume-change",
+	"audio-channel-left",
+	"audio-channel-right",
+	"audio-channel-front-left",
+	"audio-channel-front-right",
+	"audio-channel-front-center",
+	"audio-channel-rear-left",
+	"audio-channel-rear-right",
+	"audio-channel-rear-center",
+	"audio-channel-lfe",
+	"audio-channel-side-left",
+	"audio-channel-side-right",
+	"audio-test-signal",
+	/* Standard Input Feedback Sounds */
+	"window-close",
+	"window-slide-in",
+	"window-slide-out",
+	"window-minimized",
+	"window-unminimized",
+	"window-maximized",
+	"window-unmaximized",
+	"window-inactive-click",
+	"window-move-start",
+	"window-move-end",
+	"window-resize-start",
+	"window-resize-end",
+	"desktop-switch-left",
+	"desktop-switch-right",
+	"window-switch",
+	"notebook-tab-changed",
+	"scroll-up",
+	"scroll-down",
+	"scroll-left",
+	"scroll-right",
+	"scroll-up-end",
+	"scroll-down-end",
+	"scroll-left-end",
+	"scroll-right-end",
+	"dialog-ok",
+	"dialog-cancel",
+	"drag-start",
+	"drag-accept",
+	"drag-fail",
+	"link-pressed",
+	"link-released",
+	"menu-click",
+	"button-toggle-on",
+	"button-toggle-off",
+	"expander-toggle-on",
+	"expander-toggle-off",
+	"menu-popup",
+	"menu-popdown",
+	"menu-replace",
+	"tooltip-popup",
+	"tooltip-popdown",
+	"item-selected",
+	/* Standard Game Sounds */
+	"game-over-winner",
+	"game-over-loser",
+	"game-card-shuffle",
+	"game-human-move",
+	"game-computer-move",
+	NULL
+};
 
 /** @} */
 
@@ -261,7 +408,7 @@ parse_file(char *path, const char *profile)
 		llang = strdup(getenv("LANG"));
 	else
 		llang = strdup("POSIX");
-	DPRINTF(1, "%s: language is '%s'\n", NAME, llang);
+	DPRINTF(1, "language is '%s'\n", llang);
 
 	q = strchr(llang, '@');
 	slang = strdup(llang);
@@ -274,11 +421,11 @@ parse_file(char *path, const char *profile)
 		strcat(llang, q);
 	}
 
-	DPRINTF(1, "%s: long  language string is '%s'\n", NAME, llang);
-	DPRINTF(1, "%s: short language string is '%s'\n", NAME, slang);
+	DPRINTF(1, "long  language string is '%s'\n", llang);
+	DPRINTF(1, "short language string is '%s'\n", slang);
 
 	if (!(file = fopen(path, "r"))) {
-		EPRINTF("%s: cannot open file '%s' for reading\n", NAME, path);
+		EPRINTF("cannot open file '%s' for reading\n", path);
 		return (NULL);
 	}
 	free(e->path);
@@ -558,7 +705,7 @@ lookup_theme(char *themes, const char *theme)
 		memmove(inherits, inherits + 1, strlen(inherits) - 1);
 	for (p = inherits + strlen(inherits); p > inherits && *p == ';'; p--)
 		*p = '\0';
-	DPRINTF(1, "%s: theme %s inherits '%s'\n", NAME, theme, inherits);
+	DPRINTF(1, "theme %s inherits '%s'\n", theme, inherits);
 	for (parents = inherits; *parents;) {
 		if ((p = strchr(parents, ';'))) {
 			*p = '\0';
@@ -596,7 +743,7 @@ lookup_themes(void)
   * itself.
   */
 static void
-lookup_file(char *name)
+lookup_file(const char *name)
 {
 	const gchar *const *locales, *const *locale;
 	char *path = NULL, *eventid, *home, *p, *tlist, *themes;
@@ -605,7 +752,7 @@ lookup_file(char *name)
 
 	locales = g_get_language_names();
 	tlist = lookup_themes();
-	DPRINTF(1, "%s: theme list is '%s'\n", NAME, tlist);
+	DPRINTF(1, "theme list is '%s'\n", tlist);
 	home = getenv("HOME") ? : ".";
 	eventid = calloc(PATH_MAX + 1, sizeof(*eventid));
 	strncpy(eventid, name, PATH_MAX);
@@ -622,9 +769,9 @@ lookup_file(char *name)
 				themes = themes + strlen(themes);
 			}
 			if (theme)
-				DPRINTF(1, "%s: searching with theme '%s'\n", NAME, theme);
+				DPRINTF(1, "searching with theme '%s'\n", theme);
 			else
-				DPRINTF(1, "%s: searching without a theme\n", NAME);
+				DPRINTF(1, "searching without a theme\n");
 			for (profile = options.profile ? : "stereo"; profile;
 			     profile = strcmp(profile, "stereo") ? "stereo" : NULL) {
 				if (!theme && strcmp(profile, "stereo"))
@@ -690,7 +837,7 @@ lookup_file(char *name)
 							strncat(path, eventid, PATH_MAX);
 							p = path + strlen(path);
 							strcpy(p, ".disabled");
-							DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+							DPRINTF(1, "checking '%s'\n", path);
 							if (!stat(path, &st) && output_path(home, path)
 							    && !options.all) {
 								free(list);
@@ -700,7 +847,7 @@ lookup_file(char *name)
 								return;
 							}
 							strcpy(p, ".oga");
-							DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+							DPRINTF(1, "checking '%s'\n", path);
 							if (!stat(path, &st) && output_path(home, path)
 							    && !options.all) {
 								free(list);
@@ -710,7 +857,7 @@ lookup_file(char *name)
 								return;
 							}
 							strcpy(p, ".ogg");
-							DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+							DPRINTF(1, "checking '%s'\n", path);
 							if (!stat(path, &st) && output_path(home, path)
 							    && !options.all) {
 								free(list);
@@ -720,7 +867,7 @@ lookup_file(char *name)
 								return;
 							}
 							strcpy(p, ".wav");
-							DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+							DPRINTF(1, "checking '%s'\n", path);
 							if (!stat(path, &st) && output_path(home, path)
 							    && !options.all) {
 								free(list);
@@ -748,7 +895,7 @@ lookup_file(char *name)
 		}
 	} else {
 		path = strdup(eventid);
-		DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+		DPRINTF(1, "checking '%s'\n", path);
 		if (!stat(path, &st)) {
 			output_path(home, path);
 		}
@@ -800,7 +947,7 @@ list_paths(void)
 		}
 		path = realloc(path, PATH_MAX + 1);
 		strncat(path, "/sounds", PATH_MAX);
-		DPRINTF(1, "%s: checking '%s'\n", NAME, path);
+		DPRINTF(1, "checking '%s'\n", path);
 		if (!stat(path, &st))
 			output_path(home, path);
 		free(path);
@@ -826,10 +973,221 @@ do_play(int argc, char *argv[])
 }
 
 static void
-do_show(int argc, char *argv[])
+get_sound_event(char *key, char *file)
 {
+	Event *event;
+
+	DPRINTF(1, "getting sound event: %s: %s\n", key, file);
+	for (event = events; event; event = event->next) {
+		if (!strcmp(key, event->key))
+			break;
+	}
+	if (options.all || !event) {
+		DPRINTF(1, "allocating event for: %s: %s\n", key, file);
+		event = calloc(1, sizeof(*event));
+		event->next = events;
+		events = event;
+		event->key = strdup(key);
+		event->file = strdup(file);
+	}
+}
+
+static int
+sort_keys(const void *a, const void *b)
+{
+	Event *const *A = a;
+	Event *const *B = b;
+
+	return strcmp((*A)->key, (*B)->key);
+}
+
+static void
+sort_sound_events(void)
+{
+	Event *event;
+	int i, n;
+
+	for (n = 0, event = events; event; event = event->next, n++) ;
+	array = calloc(n, sizeof(Event *));
+	DPRINTF(1, "there are %d entries\n", n);
+	for (i = 0, event = events; event; event = event->next, i++)
+		array[i] = event;
+	qsort(array, n, sizeof(Event *), &sort_keys);
+	events = array[0];
+	for (i = 0; i < n - 1; i++)
+		array[i]->next = array[i + 1];
+	array[n - 1]->next = NULL;
+	free(array);
+}
+
+static void
+list_sound_events(void)
+{
+	Event *event;
+
+	for (event = events; event; event = event->next)
+		fprintf(stdout, "%s: %s\n", event->key, event->file);
+}
+
+static void
+get_events(char *path, const char *theme) {
+	DIR *dir;
+	struct dirent *d;
+
+	if (!theme)
+		return;
+	DPRINTF(1, "checking directory: %s\n", path);
+	if (!(dir = opendir(path))) {
+		DPRINTF(1, "%s: %s\n", path, strerror(errno));
+		return;
+	}
+	while ((d = readdir(dir))) {
+		const char *suffix;
+		char *f, *file;
+		struct stat st;
+		int len;
+
+		if (d->d_name[0] == '.')
+			continue;
+		len = strlen(path) + strlen(d->d_name) + 2;
+		file = calloc(len, sizeof(*file));
+		strcpy(file, path);
+		strcat(file, "/");
+		strcat(file, d->d_name);
+		if (stat(file, &st) == -1) {
+			EPRINTF("%s: %s\n", file, strerror(errno));
+			free(file);
+			continue;
+		}
+		if (S_ISREG(st.st_mode)) {
+			char *key;
+
+			key = strdup(d->d_name);
+			if (((f = strstr(key, (suffix = ".disabled"))) && f[strlen(suffix)] == '\0') ||
+			    ((f = strstr(key, (suffix = ".oga")))      && f[strlen(suffix)] == '\0') ||
+			    ((f = strstr(key, (suffix = ".ogg")))      && f[strlen(suffix)] == '\0') ||
+			    ((f = strstr(key, (suffix = ".wav")))      && f[strlen(suffix)] == '\0') ||
+			    ((f = strstr(key, (suffix = ".sound")))    && f[strlen(suffix)] == '\0')) {
+				*f = '\0';
+				get_sound_event(key, file);
+			}
+			free(key);
+			free(file);
+			continue;
+		} else if (S_ISDIR(st.st_mode)) {
+			get_events(file, theme);
+			free(file);
+			continue;
+		} else {
+			DPRINTF(1, "%s: %s\n", file, "not a file or directory");
+			free(file);
+			continue;
+		}
+	}
+	closedir(dir);
+}
+
+static void
+do_listem(int argc, char *argv[])
+{
+	const char **eventid;
+
 	(void) argc;
 	(void) argv;
+	for (eventid = StandardSoundNames; eventid && *eventid; eventid++) {
+		fprintf(stdout, "%s: \n", *eventid);
+		lookup_file(*eventid);
+	}
+}
+
+static void
+do_show(int argc, char *argv[])
+{
+	const gchar *const *locales, *const *locale;
+	char *home, *p, *tlist, *themes;
+	const char *theme, *profile;
+
+	(void) argc;
+	(void) argv;
+
+	locales = g_get_language_names();
+	tlist = lookup_themes();
+	DPRINTF(1, "theme list is '%s'\n", tlist);
+	home = getenv("HOME") ? : ".";
+
+	for (themes = tlist;;) {
+		if (!*themes) {
+			theme = NULL;
+		} else if ((p = strchr(themes, ';'))) {
+			*p = '\0';
+			theme = themes;
+			themes = p + 1;
+		} else {
+			theme = themes;
+			themes = themes + strlen(themes);
+		}
+		for (profile = options.profile ? : "stereo"; profile;
+		     profile = strcmp(profile, "stereo") ? "stereo" : NULL) {
+			if (!theme && strcmp(profile, "stereo"))
+				continue;
+			for (locale = locales;; locale++) {
+				char *list, *dirs, *env;
+
+				list = calloc(PATH_MAX + 1, sizeof(*list));
+
+				dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
+				if ((env = getenv("XDG_DATA_HOME")) && *env) {
+					strncpy(list, env, PATH_MAX);
+				} else {
+					strncpy(list, home, PATH_MAX);
+					strncat(list, "/.local/share", PATH_MAX);
+				}
+				if (options.skiptilde) {
+					strncpy(list, dirs, PATH_MAX);
+				} else {
+					strncat(list, ":", PATH_MAX);
+					strncat(list, dirs, PATH_MAX);
+				}
+				for (dirs = list; dirs && *dirs;) {
+					char *p, *path;
+
+					if (*dirs == '.' && options.skipdot)
+						continue;
+					if (*dirs == '~' && options.skiptilde)
+						continue;
+					if ((p = strchr(dirs, ':'))) {
+						*p = '\0';
+						path = strdup(dirs);
+						dirs = p + 1;
+					} else {
+						path = strdup(dirs);
+						*dirs = '\0';
+					}
+					path = realloc(path, PATH_MAX + 1);
+					strncat(path, "/sounds", PATH_MAX);
+					if (theme) {
+						strncat(path, "/", PATH_MAX);
+						strncat(path, theme, PATH_MAX);
+						strncat(path, "/", PATH_MAX);
+						strncat(path, profile, PATH_MAX);
+						if (*locale) {
+							strncat(path, "/", PATH_MAX);
+							strncat(path, *locale, PATH_MAX);
+						}
+					}
+					get_events(path, theme);
+				}
+				free(list);
+				if (!*locale)
+					break;
+			}
+		}
+		if (!theme)
+			break;
+	}
+	free(tlist);
+	sort_sound_events();
+	list_sound_events();
 }
 
 static void
@@ -887,18 +1245,18 @@ set_default_theme(void)
 		char *buf, *b, *e;
 
 		if (stat(file, &st)) {
-			DPRINTF(1, "%s: %s: %s\n", NAME, file, strerror(errno));
+			DPRINTF(1, "%s: %s\n", file, strerror(errno));
 			continue;
 		}
 		if (!S_ISREG(st.st_mode)) {
-			DPRINTF(1, "%s: %s: not a file\n", NAME, file);
+			DPRINTF(1, "%s: not a file\n", file);
 			continue;
 		}
 		if (!(f = fopen(file, "r"))) {
-			DPRINTF(1, "%s: %s: %s\n", NAME, file, strerror(errno));
+			DPRINTF(1, "%s: %s\n", file, strerror(errno));
 			continue;
 		}
-		DPRINTF(1, "%s: got file %s\n", NAME, file);
+		DPRINTF(1, "got file %s\n", file);
 		buf = calloc(PATH_MAX + 1, sizeof(*buf));
 		while (fgets(buf, PATH_MAX, f)) {
 			b = buf;
@@ -927,7 +1285,7 @@ set_default_theme(void)
 			*e = '\0';
 			memmove(buf, b, strlen(b) + 1);
 			if ((entry = lookup_index(buf, NULL))) {
-				OPRINTF(1, "%s: found theme from %s %s\n", NAME, file, buf);
+				OPRINTF(1, "found theme from %s %s\n", file, buf);
 				free(options.theme);
 				options.theme = strdup(buf);
 				free_entry(entry);
@@ -938,9 +1296,9 @@ set_default_theme(void)
 	}
 	free(files);
 	if (!options.theme)
-		DPRINTF(1, "%s: could not find theme\n", NAME);
+		DPRINTF(1, "could not find theme\n");
 	else
-		DPRINTF(1, "%s: found theme %s\n", NAME, options.theme);
+		DPRINTF(1, "found theme %s\n", options.theme);
 	return;
 }
 
@@ -1129,6 +1487,8 @@ main(int argc, char *argv[])
 			{"show-tilde",	no_argument,		NULL,	'T'},
 			{"theme",	required_argument,	NULL,	'N'},
 			{"profile",	required_argument,	NULL,	'P'},
+			{"standard",	no_argument,		NULL,	'S'},
+			{"context",	required_argument,	NULL,	'c'},
 
 			{"debug",	optional_argument,	NULL,	'D'},
 			{"verbose",	optional_argument,	NULL,	'v'},
@@ -1140,10 +1500,10 @@ main(int argc, char *argv[])
 		};
 		/* *INDENT-ON* */
 
-		c = getopt_long_only(argc, argv, "WnlaotOTN:P:D::v::hVCH?", long_options,
+		c = getopt_long_only(argc, argv, "WnlaotOTN:P:Sc:D::v::hVCH?", long_options,
 				     &option_index);
 #else				/* _GNU_SOURCE */
-		c = getopt(argc, argv, "WnlaotOTN:P:DvhVCH?");
+		c = getopt(argc, argv, "WnlaotOTN:P:Sc:DvhVCH?");
 #endif				/* _GNU_SOURCE */
 		if (c == -1) {
 			if (options.debug)
@@ -1215,6 +1575,13 @@ main(int argc, char *argv[])
 		case 'P':	/* -P, --profile PROFILE */
 			free(options.profile);
 			options.profile = strdup(optarg);
+			break;
+		case 'S':	/* -S, --standard */
+			options.standard = 1;
+			break;
+		case 'c':	/* -c, --context CONTEXT */
+			free(options.context);
+			options.context = strdup(options.context);
 			break;
 
 		case 'D':	/* -D, --debug [level] */
@@ -1332,7 +1699,10 @@ main(int argc, char *argv[])
 		break;
 	case CommandShow:
 		DPRINTF(1, "%s: running show\n", argv[0]);
-		do_show(argc, argv);
+		if (options.standard)
+			do_listem(argc, argv);
+		else
+			do_show(argc, argv);
 		break;
 	case CommandWhereis:
 		DPRINTF(1, "%s: running whereis\n", argv[0]);
