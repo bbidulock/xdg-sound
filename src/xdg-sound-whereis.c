@@ -865,7 +865,7 @@ lookup_file(const char *name)
 			else
 				DPRINTF(1, "searching without a theme\n");
 			for (profile = options.profile ? : "stereo"; profile;
-			     profile = !*profile ? (strcmp(profile, "stereo") ? "stereo" : "") : NULL) {
+			     profile = *profile ? (strcmp(profile, "stereo") ? "stereo" : "") : NULL) {
 				if (!theme && *profile) {
 					DPRINTF(1, "skipping profile '%s' for null theme\n", profile);
 					continue;
@@ -896,8 +896,10 @@ lookup_file(const char *name)
 						for (locale = locales;; locale++) {
 							char *list, *dirs, *env;
 
-							if (!theme && *locale)
+							if (!theme && *locale) {
+								DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
 								continue;
+							}
 							/* strip any sound file extension */
 							if ((p = strstr(eventid, ".disabled")) == eventid + strlen(eventid) - 9)
 								*p = '\0';
@@ -1026,50 +1028,127 @@ lookup_file(const char *name)
 static void
 list_paths(void)
 {
-	char *path = NULL, *home;
-	char *list, *dirs, *env;
-	struct stat st;
+	const gchar *const *locales, *const *locale;
+	char *home, *p, *tlist, *themes, *slist, *subdirs;
+	const char *theme, *profile, *subdir;
 
+	locales = g_get_language_names();
+	tlist = lookup_themes();
+	DPRINTF(1, "theme list is '%s'\n", tlist);
 	home = getenv("HOME") ? : ".";
 
-	list = calloc(PATH_MAX + 1, sizeof(*list));
-	dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
-	if ((env = getenv("XDG_DATA_HOME")) && *env)
-		strncpy(list, env, PATH_MAX);
-	else {
-		strncpy(list, home, PATH_MAX);
-		strncat(list, "/.local/share", PATH_MAX);
-	}
-	if (options.skiptilde) {
-		strncpy(list, dirs, PATH_MAX);
-	} else {
-		strncat(list, ":", PATH_MAX);
-		strncat(list, dirs, PATH_MAX);
-	}
-	for (dirs = list; !path && *dirs;) {
-		char *p;
-
-		if (*dirs == '.' && options.skipdot)
-			continue;
-		if (*dirs == '~' && options.skiptilde)
-			continue;
-		if ((p = strchr(dirs, ':'))) {
+	for (themes = tlist;;) {
+		if (!*themes) {
+			theme = NULL;
+		} else if ((p = strchr(themes, ';'))) {
 			*p = '\0';
-			path = strdup(dirs);
-			dirs = p + 1;
+			theme = themes;
+			themes = p + 1;
 		} else {
-			path = strdup(dirs);
-			*dirs = '\0';
+			theme = themes;
+			themes = themes + strlen(themes);
 		}
-		path = realloc(path, PATH_MAX + 1);
-		strncat(path, "/sounds", PATH_MAX);
-		DPRINTF(1, "checking '%s'\n", path);
-		if (!stat(path, &st))
-			output_path(home, path);
-		free(path);
-		path = NULL;
+		if (theme)
+			DPRINTF(1, "searching with theme '%s'\n", theme);
+		else
+			DPRINTF(1, "searching without a theme\n");
+		for (profile = options.profile ? : "stereo"; profile;
+		     profile = *profile ? (strcmp(profile, "stereo") ? "stereo" : "") : NULL) {
+			if (!theme && *profile) {
+				DPRINTF(1, "skipping profile '%s' for null theme\n", profile);
+				continue;
+			}
+			slist = lookup_subdirs(theme, profile);
+			DPRINTF(1, "subdir list is '%s' for theme '%s' and profile '%s'\n", slist,
+				theme, profile);
+			for (subdirs = slist;;) {
+				if (!*subdirs) {
+					subdir = NULL;
+					if (theme) {
+						DPRINTF(1, "skipping empty subdir for theme '%s', profile '%s'\n", theme, profile);
+						break;
+					}
+					DPRINTF(1, "using empty subdir for null theme\n");
+				} else if ((p = strchr(subdirs, ';'))) {
+					*p = '\0';
+					subdir = subdirs;
+					subdirs = p + 1;
+				} else {
+					subdir = subdirs;
+					subdirs = subdirs + strlen(subdirs);
+				}
+				if (subdir)
+					DPRINTF(1, "searching with subdir '%s'\n", subdir);
+				else
+					DPRINTF(1, "searching without a subdir\n");
+
+				for (locale = locales;; locale++) {
+					char *list, *dirs, *env;
+
+					if (!theme && *locale) {
+						DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
+						continue;
+					}
+					list = calloc(PATH_MAX + 1, sizeof(*list));
+					dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
+					if ((env = getenv("XDG_DATA_HOME")) && *env)
+						strncpy(list, env, PATH_MAX);
+					else {
+						strncpy(list, home, PATH_MAX);
+						strncat(list, "/.local/share", PATH_MAX);
+					}
+					if (options.skiptilde) {
+						strncpy(list, dirs, PATH_MAX);
+					} else {
+						strncat(list, ":", PATH_MAX);
+						strncat(list, dirs, PATH_MAX);
+					}
+					for (dirs = list; dirs && *dirs;) {
+						char *p, *path;
+						struct stat st;
+
+						if (*dirs == '.' && options.skipdot)
+							continue;
+						if (*dirs == '~' && options.skiptilde)
+							continue;
+						if ((p = strchr(dirs, ':'))) {
+							*p = '\0';
+							path = strdup(dirs);
+							dirs = p + 1;
+						} else {
+							path = strdup(dirs);
+							*dirs = '\0';
+						}
+						path = realloc(path, PATH_MAX + 1);
+						strncat(path, "/sounds", PATH_MAX);
+						if (theme) {
+							strncat(path, "/", PATH_MAX);
+							strncat(path, theme, PATH_MAX);
+							strncat(path, "/", PATH_MAX);
+							strncat(path, subdir, PATH_MAX);
+							if (*locale) {
+								strncat(path, "/", PATH_MAX);
+								strncat(path, *locale, PATH_MAX);
+							}
+						}
+						DPRINTF(1, "checking '%s'\n", path);
+						if (!stat(path, &st))
+							output_path(home, path);
+						free(path);
+					}
+					free(list);
+					if (!*locale)
+						break;
+				}
+				if (!subdir)
+					break;
+			}
+			free(slist);
+		}
+		if (!theme)
+			break;
 	}
-	free(list);
+	free(tlist);
 	return;
 }
 
@@ -1150,7 +1229,7 @@ get_events(char *path, const char *theme) {
 	DIR *dir;
 	struct dirent *d;
 
-	if (!theme)
+	if (!theme && !options.all)
 		return;
 	DPRINTF(1, "checking directory: %s\n", path);
 	if (!(dir = opendir(path))) {
@@ -1190,12 +1269,8 @@ get_events(char *path, const char *theme) {
 			free(key);
 			free(file);
 			continue;
-		} else if (S_ISDIR(st.st_mode)) {
-			/* get_events(file, theme); */
-			free(file);
-			continue;
 		} else {
-			DPRINTF(1, "%s: %s\n", file, "not a file or directory");
+			DPRINTF(1, "%s: %s\n", file, "not a file");
 			free(file);
 			continue;
 		}
@@ -1247,7 +1322,7 @@ do_show(int argc, char *argv[])
 		else
 			DPRINTF(1, "searching without a theme\n");
 		for (profile = options.profile ? : "stereo"; profile;
-		     profile = !*profile ? (strcmp(profile, "stereo") ? "stereo" : "") : NULL) {
+		     profile = *profile ? (strcmp(profile, "stereo") ? "stereo" : "") : NULL) {
 			if (!theme && *profile) {
 				DPRINTF(1, "skipping profile '%s' for null theme\n", profile);
 				continue;
@@ -1278,6 +1353,10 @@ do_show(int argc, char *argv[])
 				for (locale = locales;; locale++) {
 					char *list, *dirs, *env;
 
+					if (!theme && *locale) {
+						DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
+						continue;
+					}
 					list = calloc(PATH_MAX + 1, sizeof(*list));
 
 					dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
@@ -1321,6 +1400,7 @@ do_show(int argc, char *argv[])
 							}
 						}
 						get_events(path, theme);
+						free(path);
 					}
 					free(list);
 					if (!*locale)
