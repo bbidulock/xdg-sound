@@ -176,6 +176,8 @@ typedef struct {
 	int showdot;
 	int showtilde;
 	int standard;
+	int headers;
+	int dereflinks;
 	char **eventids;
 	char *theme;
 	char *profile;
@@ -194,6 +196,8 @@ Options options = {
 	.showdot = 0,
 	.showtilde = 0,
 	.standard = 0,
+	.headers = 0,
+	.dereflinks = 0,
 	.eventids = NULL,
 	.theme = NULL,
 	.profile = NULL,
@@ -589,7 +593,7 @@ parse_file(char *path)
 /** @} */
 
 static int
-output_path(const char *home, const char *path)
+output_path(const char *home, const char *eventid, const char *path)
 {
 	char *p, *line, *cdir;
 
@@ -615,8 +619,12 @@ output_path(const char *home, const char *path)
 		strncat(line, path + strlen(cdir), PATH_MAX);
 	} else
 		strncpy(line, path, PATH_MAX);
-	if (options.output > 0)
-		fprintf(stdout, "%s\n", line);
+	if (options.output > 0) {
+		if (eventid && options.headers)
+			fprintf(stdout, "%s: %s\n", eventid, line);
+		else
+			fprintf(stdout, "%s\n", line);
+	}
 	free(cdir);
 	free(line);
 	return 1;
@@ -834,14 +842,16 @@ lookup_subdirs(const char *theme, const char *profile)
   * /usr/share/sounds/freedesktop theme directory, and then in /usr/share/sounds
   * itself.
   */
-static void
+static int
 lookup_file(const char *name)
 {
 	const gchar *const *locales, *const *locale;
 	char *path = NULL, *eventid, *home, *p, *tlist, *themes, *slist, *subdirs;
 	const char *theme, *profile, *subdir;
 	struct stat st;
+	int found_one = 0;
 
+	DPRINTF(2, "looking up %s\n", name);
 	locales = g_get_language_names();
 	tlist = lookup_themes();
 	DPRINTF(1, "theme list is '%s'\n", tlist);
@@ -955,39 +965,39 @@ lookup_file(const char *name)
 								p = path + strlen(path);
 								strcpy(p, ".disabled");
 								DPRINTF(1, "checking '%s'\n", path);
-								if (!stat(path, &st) && output_path(home, path) && !options.all) {
+								if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
 									free(list);
 									free(eventid);
 									free(path);
 									free(tlist);
-									return;
+									return (found_one);
 								}
 								strcpy(p, ".oga");
 								DPRINTF(1, "checking '%s'\n", path);
-								if (!stat(path, &st) && output_path(home, path) && !options.all) {
+								if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
 									free(list);
 									free(eventid);
 									free(path);
 									free(tlist);
-									return;
+									return (found_one);
 								}
 								strcpy(p, ".ogg");
 								DPRINTF(1, "checking '%s'\n", path);
-								if (!stat(path, &st) && output_path(home, path) && !options.all) {
+								if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
 									free(list);
 									free(eventid);
 									free(path);
 									free(tlist);
-									return;
+									return (found_one);
 								}
 								strcpy(p, ".wav");
 								DPRINTF(1, "checking '%s'\n", path);
-								if (!stat(path, &st) && output_path(home, path) && !options.all) {
+								if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
 									free(list);
 									free(eventid);
 									free(path);
 									free(tlist);
-									return;
+									return (found_one);
 								}
 								free(path);
 								path = NULL;
@@ -1015,13 +1025,13 @@ lookup_file(const char *name)
 		path = strdup(eventid);
 		DPRINTF(1, "checking '%s'\n", path);
 		if (!stat(path, &st)) {
-			output_path(home, path);
+			found_one |= output_path(home, NULL, path);
 		}
 		free(path);
 		free(tlist);
 	}
 	free(eventid);
-	return;
+	return (found_one);
 }
 
 
@@ -1133,7 +1143,7 @@ list_paths(void)
 						}
 						DPRINTF(1, "checking '%s'\n", path);
 						if (!stat(path, &st))
-							output_path(home, path);
+							output_path(home, NULL, path);
 						free(path);
 					}
 					free(list);
@@ -1225,7 +1235,8 @@ list_sound_events(void)
 }
 
 static void
-get_events(char *path, const char *theme) {
+get_events(char *path, const char *theme)
+{
 	DIR *dir;
 	struct dirent *d;
 
@@ -1264,16 +1275,41 @@ get_events(char *path, const char *theme) {
 			    ((f = strstr(key, (suffix = ".wav")))      && f[strlen(suffix)] == '\0') ||
 			    ((f = strstr(key, (suffix = ".sound")))    && f[strlen(suffix)] == '\0')) {
 				*f = '\0';
+				if (!lstat(file, &st) && S_ISLNK(st.st_mode)) {
+					DPRINTF(1, "file %s is a symbolic link\n", file);
+					if (options.dereflinks) {
+						char *path;
+						/* use actual file name, not symbolic link */
+						path = calloc(PATH_MAX + 1, sizeof(*path));
+						if (readlinkat(dirfd(dir), file, path, PATH_MAX) != -1 && *path) {
+							DPRINTF(1, "the link is %s\n", path);
+							if (path[0] != '/') {
+								char *path2, *p;
+
+								path2 = calloc(PATH_MAX + 1, sizeof(*path2));
+								strncpy(path2, file, PATH_MAX);
+								if ((p = strrchr(path2, '/')))
+									p[1] = '\0';
+								strncat(path2 ,path, PATH_MAX);
+								free(path);
+								path = path2;
+								DPRINTF(1, "the link resolved to %s\n", path);
+							}
+							free(file);
+							file = strdup(path);
+						}
+						free(path);
+					} else {
+						DPRINTF(1, "not dereferencing link %s\n", file);
+					}
+				}
 				get_sound_event(key, file);
 			}
 			free(key);
-			free(file);
-			continue;
 		} else {
 			DPRINTF(1, "%s: %s\n", file, "not a file");
-			free(file);
-			continue;
 		}
+		free(file);
 	}
 	closedir(dir);
 }
@@ -1285,9 +1321,14 @@ do_listem(int argc, char *argv[])
 
 	(void) argc;
 	(void) argv;
+	/* XXX: the problem with this options.headers approach is not printing headers
+	   for missing standard events: have lookup_file return success or failure? */
+	options.headers = 1;
 	for (eventid = StandardSoundNames; eventid && *eventid; eventid++) {
-		fprintf(stdout, "%s: \n", *eventid);
-		lookup_file(*eventid);
+		if (!options.headers)
+			fprintf(stdout, "%s: \n", *eventid);
+		if (!lookup_file(*eventid) && options.headers)
+			fprintf(stdout, "%s: \n", *eventid);
 	}
 }
 
@@ -1675,6 +1716,8 @@ General Options:\n\
         use sound theme named THEME\n\
     --profile, -P PROFILE      [default: %3$s]\n\
         use sound profile named PROFILE\n\
+    --deref, -d                [default: %6$s]\n\
+        dereference symbolic links\n\
     --debug, -D [LEVEL]        [default: %4$d]\n\
         increment or set debug LEVEL\n\
     --verbose, -v [LEVEL]      [default: %5$d]\n\
@@ -1685,6 +1728,7 @@ General Options:\n\
 , options.profile
 , options.debug
 , options.output
+, options.dereflinks ? "enabled" : "disabled"
 );
 }
 
@@ -1717,6 +1761,7 @@ main(int argc, char *argv[])
 			{"theme",	required_argument,	NULL,	'N'},
 			{"profile",	required_argument,	NULL,	'P'},
 			{"standard",	no_argument,		NULL,	'S'},
+			{"deref",	no_argument,		NULL,	'd'},
 			{"context",	required_argument,	NULL,	'c'},
 
 			{"debug",	optional_argument,	NULL,	'D'},
@@ -1729,10 +1774,10 @@ main(int argc, char *argv[])
 		};
 		/* *INDENT-ON* */
 
-		c = getopt_long_only(argc, argv, "wnlaotOTN:P:Sc:D::v::hVCH?", long_options,
+		c = getopt_long_only(argc, argv, "wnlaotOTN:P:Sdc:D::v::hVCH?", long_options,
 				     &option_index);
 #else				/* _GNU_SOURCE */
-		c = getopt(argc, argv, "wnlaotOTN:P:Sc:DvhVCH?");
+		c = getopt(argc, argv, "wnlaotOTN:P:Sdc:DvhVCH?");
 #endif				/* _GNU_SOURCE */
 		if (c == -1) {
 			if (options.debug)
@@ -1807,6 +1852,9 @@ main(int argc, char *argv[])
 			break;
 		case 'S':	/* -S, --standard */
 			options.standard = 1;
+			break;
+		case 'd':	/* -d, --deref */
+			options.dereflinks = 1;
 			break;
 		case 'c':	/* -c, --context CONTEXT */
 			free(options.context);
