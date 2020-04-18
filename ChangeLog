@@ -1,5 +1,114 @@
 # created with git log --stat=76 -M -C -500|fmt -sct -w80
 
+commit 1c770885399fb0f77fb6c54efaff885eb92b4a20
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Fri Apr 17 23:52:51 2020 -0600
+
+    dereference more links
+
+ src/xdg-play.c          | 90 ++++++++++++++++++++++++++++-------------
+ src/xdg-sound-list.c    | 98 ++++++++++++++++++++++++++++++---------------
+ src/xdg-sound-whereis.c | 90 ++++++++++++++++++++++++++++-------------
+ src/xdg-sound-which.c   | 90 ++++++++++++++++++++++++++++-------------
+ 4 files changed, 252 insertions(+), 116 deletions(-)
+
+commit b9f07ca041e7f2e0bc733309cf8ba49ed51ac2b6
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Fri Apr 17 18:04:04 2020 -0600
+
+    handle headers, dereference some links
+
+ src/xdg-play.c          |  96 ++++++++++++++++++++++++++++++----------
+ src/xdg-sound-list.c    | 104 ++++++++++++++++++++++++++++++++------------
+ src/xdg-sound-whereis.c |  96 ++++++++++++++++++++++++++++++----------
+ src/xdg-sound-which.c   |  96 ++++++++++++++++++++++++++++++----------
+ 4 files changed, 292 insertions(+), 100 deletions(-)
+
+commit 2d6cd4026e51c4cb46266da0ef9e8f8e79deaedb
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Fri Apr 17 10:22:01 2020 -0600
+
+    handle subdirs when listing directories too
+
+ src/xdg-play.c          | 172 ++++++++++++++++++++++++++++++++------------
+ src/xdg-sound-list.c    | 172 ++++++++++++++++++++++++++++++++------------
+ src/xdg-sound-whereis.c | 172 ++++++++++++++++++++++++++++++++------------
+ src/xdg-sound-which.c   | 172 ++++++++++++++++++++++++++++++++------------
+ 4 files changed, 504 insertions(+), 184 deletions(-)
+
+commit fd46ee06a59ff568fe73df0be0648ea28fd275da
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Fri Apr 17 01:14:52 2020 -0600
+
+    update proper subdirs when searching too
+
+ src/xdg-play.c          | 125 ++++++++++++++++++++++++++++----------------
+ src/xdg-sound-list.c    | 125 ++++++++++++++++++++++++++++----------------
+ src/xdg-sound-whereis.c | 125 ++++++++++++++++++++++++++++----------------
+ src/xdg-sound-which.c   | 125 ++++++++++++++++++++++++++++----------------
+ 4 files changed, 316 insertions(+), 184 deletions(-)
+
+commit 1aaa676a17aaebe92a018372cc21c7ffa912a964
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Fri Apr 17 00:15:41 2020 -0600
+
+    read subdirs from index.theme file
+
+ src/xdg-play.c          | 404 ++++++++++++++++++++++++++++----------------
+ src/xdg-sound-list.c    | 404 ++++++++++++++++++++++++++++----------------
+ src/xdg-sound-whereis.c | 404 ++++++++++++++++++++++++++++----------------
+ src/xdg-sound-which.c   | 404 ++++++++++++++++++++++++++++----------------
+ 4 files changed, 1040 insertions(+), 576 deletions(-)
+
+commit c9a4bcc72aff4e11fd5692785695087a2bef0682
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Fri Apr 17 00:15:23 2020 -0600
+
+    add indent profile
+
+ .indent.pro | 368 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 368 insertions(+)
+
+commit 473e240f2a06766b0a26f22cda5b27608cf69caa
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Thu Apr 16 19:27:06 2020 -0600
+
+    build up xdg-sound-list
+
+ man/xdg-play.pod          | 100 +++++++++-
+ man/xdg-sound-list.pod    | 150 ++++++++++++++-
+ man/xdg-sound-whereis.pod | 125 ++++++++++++-
+ man/xdg-sound-which.pod   |  22 +--
+ src/xdg-play.c            | 422 +++++++++++++++++++++++++++++++++++++++---
+ src/xdg-sound-list.c      | 422 +++++++++++++++++++++++++++++++++++++++---
+ src/xdg-sound-whereis.c   | 422 +++++++++++++++++++++++++++++++++++++++---
+ src/xdg-sound-which.c     | 422 +++++++++++++++++++++++++++++++++++++++---
+ 8 files changed, 1955 insertions(+), 130 deletions(-)
+
+commit ab8bc1b08ef7822ae979b36f1555a6086487da4b
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Thu Apr 16 00:38:59 2020 -0600
+
+    update release files
+
+ AUTHORS      |  2 +-
+ ChangeLog    | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ NEWS         | 12 +++++++++---
+ README.md    |  6 +++---
+ configure.ac |  4 ++--
+ 5 files changed, 70 insertions(+), 9 deletions(-)
+
+commit 80cde2ebe3c2b324c4613372ba845ace19f8b707
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Thu Apr 16 00:38:47 2020 -0600
+
+    rationalize
+
+ src/xdg-play.c          | 675 +++++++++++++++++++++++++++++++++++++++++++-
+ src/xdg-sound-list.c    | 673 ++++++++++++++++++++++++++++++++++++++++++-
+ src/xdg-sound-whereis.c | 673 ++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 1999 insertions(+), 22 deletions(-)
+
 commit 3e46177020636124d91e3664285afed07d6b0bdb
 Author: Brian Bidulock <bidulock@openss7.org>
 Date:   Thu Apr 16 00:18:24 2020 -0600

@@ -1,9 +1,9 @@
-[xdg-sound -- read me first file.  2020-04-16]: #
+[xdg-sound -- read me first file.  2020-04-17]: #
 
 xdg-sound
 ===============
 
-Package `xdg-sound-1.0` was released under GPLv3 license 2020-04-16.
+Package `xdg-sound-0.9` was released under GPLv3 license 2020-04-17.
 
 This is a "C"-language program that can be used to launch XDG desktop
 applications with full startup notification and window manager
@@ -20,7 +20,7 @@ wrapper scripts.
 Release
 -------
 
-This is the `xdg-sound-1.0` package, released 2020-04-16.  This
+This is the `xdg-sound-0.9` package, released 2020-04-17.  This
 release, and the latest version, can be obtained from [GitHub][1], using
 a command such as:
 
@@ -131,26 +131,26 @@ Report issues on GitHub [here][2].
 
 [1]: https://github.com/bbidulock/xdg-sound
 [2]: https://github.com/bbidulock/xdg-sound/issues
-[3]: https://github.com/bbidulock/xdg-sound/blob/1.0/NEWS
-[4]: https://github.com/bbidulock/xdg-sound/blob/1.0/ChangeLog
-[5]: https://github.com/bbidulock/xdg-sound/blob/1.0/TODO
-[6]: https://github.com/bbidulock/xdg-sound/blob/1.0/COMPLIANCE
-[7]: https://github.com/bbidulock/xdg-sound/blob/1.0/INSTALL
-[8]: https://github.com/bbidulock/xdg-sound/blob/1.0/LICENSE
-[9]: https://github.com/bbidulock/xdg-sound/blob/1.0/COPYING
-[10]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-launch.pod
-[11]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/dmenu_launch.pod
-[12]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-autostart.pod
-[13]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-xsession.pod
-[14]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-session.pod
-[15]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-entry.pod
-[16]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-toolwait.pod
-[17]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-which.pod
-[18]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-whereis.pod
-[19]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-assist.pod
-[20]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-list.pod
-[21]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-types.pod
-[22]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-find.pod
-[23]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-prefs.pod
+[3]: https://github.com/bbidulock/xdg-sound/blob/0.9/NEWS
+[4]: https://github.com/bbidulock/xdg-sound/blob/0.9/ChangeLog
+[5]: https://github.com/bbidulock/xdg-sound/blob/0.9/TODO
+[6]: https://github.com/bbidulock/xdg-sound/blob/0.9/COMPLIANCE
+[7]: https://github.com/bbidulock/xdg-sound/blob/0.9/INSTALL
+[8]: https://github.com/bbidulock/xdg-sound/blob/0.9/LICENSE
+[9]: https://github.com/bbidulock/xdg-sound/blob/0.9/COPYING
+[10]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-launch.pod
+[11]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/dmenu_launch.pod
+[12]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-autostart.pod
+[13]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-xsession.pod
+[14]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-session.pod
+[15]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-entry.pod
+[16]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-toolwait.pod
+[17]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-which.pod
+[18]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-whereis.pod
+[19]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-assist.pod
+[20]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-list.pod
+[21]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-types.pod
+[22]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-find.pod
+[23]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-prefs.pod
 
 [ vim: set ft=markdown sw=4 tw=72 nocin nosi fo+=tcqlorn spell: ]: #

@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([xdg-sound],[1.0],[https://github.com/bbidulock/xdg-sound],[xdg-sound],[https://github.com/bbidulock/xdg-sound/issues])
-AC_REVISION([1.0])
+AC_INIT([xdg-sound],[0.9],[https://github.com/bbidulock/xdg-sound],[xdg-sound],[https://github.com/bbidulock/xdg-sound/issues])
+AC_REVISION([0.9])
 
 # set better defaults
 AC_PREFIX_DEFAULT([/usr])
@@ -20,13 +20,13 @@ AC_CONFIG_AUX_DIR([scripts])
 AC_USE_SYSTEM_EXTENSIONS
 AC_CANONICAL_TARGET
 
-DATE='2020-04-16'
+DATE='2020-04-17'
 AC_SUBST([DATE])
 
-MDOCDATE='April 16, 2020'
+MDOCDATE='April 17, 2020'
 AC_SUBST([MDOCDATE])
 
-BRANCH='1.0'
+BRANCH='0.9'
 AC_SUBST([BRANCH])
 
 # Initialize Automake

@@ -1,11 +1,11 @@
-xdg-sound -- history of user-visible changes.  2020-04-16
+xdg-sound -- history of user-visible changes.  2020-04-17
 
-Release xdg-sound-1.0 released 2020-04-16
+Release xdg-sound-0.9 released 2020-04-17
 -----------------------------------------
 
-git shortlog -e -n -w80,6,8 1.0
+git shortlog -e -n -w80,6,8 0.9
 
-Brian Bidulock <bidulock@openss7.org> (14):
+Brian Bidulock <bidulock@openss7.org> (23):
       Initial commit
       update
       update release files
@@ -20,4 +20,13 @@ Brian Bidulock <bidulock@openss7.org> (14):
       handle inheritance
       terminology
       set default sound theme
+      rationalize
+      update release files
+      build up xdg-sound-list
+      add indent profile
+      read subdirs from index.theme file
+      update proper subdirs when searching too
+      handle subdirs when listing directories too
+      handle headers, dereference some links
+      dereference more links
 
