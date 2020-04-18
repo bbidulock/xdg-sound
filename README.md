@@ -5,13 +5,12 @@ xdg-sound
 
 Package `xdg-sound-0.9` was released under GPLv3 license 2020-04-18.
 
-This is a "C"-language program that can be used to launch XDG desktop
-applications with full startup notification and window manager
-assistance from the command line.  The command is able to launch desktop
-applications, autostart entries and xsession entries.  It is useful when
-generating applications root menus for light-weight window managers that
-do not provide startup notification for applications launched using the
-keyboard or root menu.  The source is hosted on
+This package contains "C"-language programs and utilities for working
+with (locating and playing) event sound files from XDG sound themes.
+They are useful when developing or modifying sound themes that comply
+with the XDG sound theme specifications.
+
+The source is hosted on
 [GitHub](https://github.com/bbidulock/xdg-sound).  What it includes is
 just the xdg-sound program and manual page, as well as a handfull of
 wrapper scripts.
@@ -71,62 +70,19 @@ Read the manual page after installation:
 
 The following programs are included in `xdg-sound`:
 
- - [__`xdg-launch(1)`__][10] -- This is the primary program.
+ - [__`xdg-play(1)`__][10] -- This is the primary program.
 
- - [__`dmenu_launch(1)`__][11] -- This is a little script that uses
-   `xdg-launch(1)` and dmenu(1) to provide an application menu.
+ - [__`xdg-sound-which(1)`__][11], [__`xdg-sound-whereis(1)`__][12] --
+   Two little programs what parallel `which(1)` and `whereis(1)` for
+   sound theme event files instead of binaries.
 
- - [__`xdg-autostart(1)`__][12] -- This is a little script that invokes
-   xdg-launch(1) as a launcher for auto-start programs instead of
-   applications.
-
- - [__`xdg-xsession(1)`__][13] -- This is a little script that invokes
-   `xdg-launch(1)` as a launcher for X Sessions programs (window
-   managers) instead of applications.
-
- - [__`xdg-session(1)`__][14] -- This is a little script that invokes
-   `xdg-launch(1)` as a launcher for X Sessions programs (window
-   managers) instead of applications a simple session and full
-   auto-start procedure.
-
- - [__`xdg-entry(1)`__][15] -- This is a little script that invokes
-   xdg-launch(1)` with the --info option and lists which information
-   would be used for startup notification and launching of the resulting
-   application.
-
- - [__`xdg-toolwait(1)`__][16] -- This is a little script that invokes
-   `xdg-launch(1)` with the --toolwait option.
-
- - [__`xdg-which(1)`__][17], [__`xdg-whereis(1)`__][18] -- Two little programs what
-   parallel `which(1)` and `whereis(1)` for desktop entry files instead
-   of binaries.
-
- - [__`xdg-assist(1)`__][19] -- A program to monitor startup notification and
-   provide notification as programs start up and performs startup
-   notification completion of applications that do not complete.  It
-   also assists window managers with supporting startup notification and
-   other EWMH/NetWM features.
-
- - [__`xdg-list(1)`__][20] -- lists desktop entry files.
-
- - [__`xdg-types(1)`__][21] -- shows the content types provided by a desktop
-   application.
-
-Also provided (when `glib2` is available) are some little tools for the
-XDG desktop:
-
- - [__`xdg-find(1)`__][22] -- finds desktop entry files based on a number of
-   search criteria.
-
- - [__`xdg-prefs(1)`__][23] -- locates or sets preferred applications by
-   category or mime type.
+ - [__`xdg-sound-list(1)`__][13] -- lists event sound files.
 
 
 Issues
 ------
 
 Report issues on GitHub [here][2].
-
 
 
 [1]: https://github.com/bbidulock/xdg-sound
@@ -138,19 +94,9 @@ Report issues on GitHub [here][2].
 [7]: https://github.com/bbidulock/xdg-sound/blob/0.9/INSTALL
 [8]: https://github.com/bbidulock/xdg-sound/blob/0.9/LICENSE
 [9]: https://github.com/bbidulock/xdg-sound/blob/0.9/COPYING
-[10]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-launch.pod
-[11]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/dmenu_launch.pod
-[12]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-autostart.pod
-[13]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-xsession.pod
-[14]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-session.pod
-[15]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-entry.pod
-[16]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-toolwait.pod
-[17]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-which.pod
-[18]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-whereis.pod
-[19]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-assist.pod
-[20]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-list.pod
-[21]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-types.pod
-[22]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-find.pod
-[23]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-prefs.pod
+[10]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-play.pod
+[11]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-sound-which.pod
+[12]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-sound-whereis.pod
+[13]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-sound-list.pod
 
 [ vim: set ft=markdown sw=4 tw=72 nocin nosi fo+=tcqlorn spell: ]: #
