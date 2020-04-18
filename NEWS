@@ -21,7 +21,7 @@ git tag -n100 -l 0.9
 
 git shortlog -e -n -w80,6,8 0.9
 
-Brian Bidulock <bidulock@openss7.org> (26):
+Brian Bidulock <bidulock@openss7.org> (30):
       Initial commit
       update
       update release files
@@ -48,4 +48,8 @@ Brian Bidulock <bidulock@openss7.org> (26):
       update release files
       update release files
       remove unnecessary dependencies
+      working up documentation (manual pages)
+      handle filtering by context most functions
+      correct readmes
+      update release files
 
