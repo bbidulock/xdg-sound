@@ -595,30 +595,63 @@ parse_file(char *path)
 static int
 output_path(const char *home, const char *eventid, const char *path)
 {
-	char *p, *line, *cdir;
+	char *p, *line, *cdir, *file;
+	struct stat st;
 
-	if (options.skipdot && *path == '.')
+	file = strdup(path);
+
+	if (!lstat(file, &st) && S_ISLNK(st.st_mode)) {
+		DPRINTF(1, "file %s is a symbolic link\n", file);
+		if (options.dereflinks) {
+			char *link;
+
+			/* use actual file name, not symbolic link */
+			link = calloc(PATH_MAX + 1, sizeof(*link));
+			if (readlink(file, link, PATH_MAX) != -1 && *link) {
+				DPRINTF(1, "the link is %s\n", link);
+				if (link[0] != '/') {
+					char *read, *p;
+
+					read = calloc(PATH_MAX + 1, sizeof(*read));
+					strncpy(read, file, PATH_MAX);
+					if ((p = strrchr(read, '/')))
+						p[1] = '\0';
+					strncat(read, link, PATH_MAX);
+					free(link);
+					link = read;
+					DPRINTF(1, "the link resolved to %s\n", link);
+				}
+				free(file);
+				file = strdup(link);
+			}
+			free(link);
+		} else {
+			DPRINTF(1, "not dereferencing link %s\n", file);
+		}
+	}
+
+	if (options.skipdot && *file == '.')
 		return 0;
-	if (options.skiptilde && (*path == '~' || ((p = strstr(path, home)) && p == path)))
+	if (options.skiptilde && (*file == '~' || ((p = strstr(file, home)) && p == file)))
 		return 0;
 	cdir = calloc(PATH_MAX + 1, sizeof(*cdir));
 	if (!getcwd(cdir, PATH_MAX))
 		strncpy(cdir, ".", PATH_MAX);
 	line = calloc(PATH_MAX + 1, sizeof(*line));
-	if (*path == '~' && !options.showtilde) {
+	if (*file == '~' && !options.showtilde) {
 		strncpy(line, home, PATH_MAX);
-		strncat(line, path + 1, PATH_MAX);
-	} else if (*path == '.' && !options.showdot) {
+		strncat(line, file + 1, PATH_MAX);
+	} else if (*file == '.' && !options.showdot) {
 		strncpy(line, cdir, PATH_MAX);
-		strncat(line, path + 1, PATH_MAX);
-	} else if (options.showtilde && ((p = strstr(path, home)) && p == path)) {
+		strncat(line, file + 1, PATH_MAX);
+	} else if (options.showtilde && ((p = strstr(file, home)) && p == file)) {
 		strncpy(line, "~", PATH_MAX);
-		strncat(line, path + strlen(home), PATH_MAX);
-	} else if (options.showdot && ((p = strstr(path, cdir)) && p == path)) {
+		strncat(line, file + strlen(home), PATH_MAX);
+	} else if (options.showdot && ((p = strstr(file, cdir)) && p == file)) {
 		strncpy(line, ".", PATH_MAX);
-		strncat(line, path + strlen(cdir), PATH_MAX);
+		strncat(line, file + strlen(cdir), PATH_MAX);
 	} else
-		strncpy(line, path, PATH_MAX);
+		strncpy(line, file, PATH_MAX);
 	if (options.output > 0) {
 		if (eventid && options.headers)
 			fprintf(stdout, "%s: %s\n", eventid, line);
@@ -627,6 +660,7 @@ output_path(const char *home, const char *eventid, const char *path)
 	}
 	free(cdir);
 	free(line);
+	free(file);
 	return 1;
 }
 
@@ -1270,35 +1304,35 @@ get_events(char *path, const char *theme)
 
 			key = strdup(d->d_name);
 			if (((f = strstr(key, (suffix = ".disabled"))) && f[strlen(suffix)] == '\0') ||
-			    ((f = strstr(key, (suffix = ".oga"))) && f[strlen(suffix)] == '\0') ||
-			    ((f = strstr(key, (suffix = ".ogg"))) && f[strlen(suffix)] == '\0') ||
-			    ((f = strstr(key, (suffix = ".wav"))) && f[strlen(suffix)] == '\0') ||
-			    ((f = strstr(key, (suffix = ".sound"))) && f[strlen(suffix)] == '\0')) {
+			    ((f = strstr(key, (suffix = ".oga")))      && f[strlen(suffix)] == '\0') ||
+			    ((f = strstr(key, (suffix = ".ogg")))      && f[strlen(suffix)] == '\0') ||
+			    ((f = strstr(key, (suffix = ".wav")))      && f[strlen(suffix)] == '\0') ||
+			    ((f = strstr(key, (suffix = ".sound")))    && f[strlen(suffix)] == '\0')) {
 				*f = '\0';
 				if (!lstat(file, &st) && S_ISLNK(st.st_mode)) {
 					DPRINTF(1, "file %s is a symbolic link\n", file);
 					if (options.dereflinks) {
-						char *path;
+						char *link;
 						/* use actual file name, not symbolic link */
-						path = calloc(PATH_MAX + 1, sizeof(*path));
-						if (readlinkat(dirfd(dir), file, path, PATH_MAX) != -1 && *path) {
-							DPRINTF(1, "the link is %s\n", path);
-							if (path[0] != '/') {
-								char *path2, *p;
+						link = calloc(PATH_MAX + 1, sizeof(*link));
+						if (readlinkat(dirfd(dir), file, link, PATH_MAX) != -1 && *link) {
+							DPRINTF(1, "the link is %s\n", link);
+							if (link[0] != '/') {
+								char *read, *p;
 
-								path2 = calloc(PATH_MAX + 1, sizeof(*path2));
-								strncpy(path2, file, PATH_MAX);
-								if ((p = strrchr(path2, '/')))
+								read = calloc(PATH_MAX + 1, sizeof(*read));
+								strncpy(read, file, PATH_MAX);
+								if ((p = strrchr(read, '/')))
 									p[1] = '\0';
-								strncat(path2 ,path, PATH_MAX);
-								free(path);
-								path = path2;
-								DPRINTF(1, "the link resolved to %s\n", path);
+								strncat(read ,link, PATH_MAX);
+								free(link);
+								link = read;
+								DPRINTF(1, "the link resolved to %s\n", link);
 							}
 							free(file);
-							file = strdup(path);
+							file = strdup(link);
 						}
-						free(path);
+						free(link);
 					} else {
 						DPRINTF(1, "not dereferencing link %s\n", file);
 					}
