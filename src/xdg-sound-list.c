@@ -169,6 +169,7 @@ typedef struct {
 	int output;
 	int info;
 	Command command;
+	int play;
 	int noplay;
 	int all;
 	int skipdot;
@@ -182,6 +183,8 @@ typedef struct {
 	char *theme;
 	char *profile;
 	char *context;
+	char *datadirs;
+	char *datahome;
 } Options;
 
 Options options = {
@@ -189,6 +192,7 @@ Options options = {
 	.output = 1,
 	.info = 0,
 	.command = CommandDefault,
+	.play = 0,
 	.noplay = 0,
 	.all = 0,
 	.skipdot = 0,
@@ -202,6 +206,8 @@ Options options = {
 	.theme = NULL,
 	.profile = NULL,
 	.context = NULL,
+	.datadirs = NULL,
+	.datahome = NULL,
 };
 
 static const char *SoundThemeFields[] = {
@@ -239,6 +245,152 @@ typedef struct Event {
 
 Event *events = NULL;   /* single linked list */
 Event **array = NULL;	/* for sorting */
+
+static const char *StandardContexts[] = {
+	"Alert",
+	"Notification",
+	"Action",
+	"Support",
+	"Game",
+	NULL
+};
+
+static const struct Sound {
+	const char *eventid;
+	int context;
+	const char *data;
+} StandardSounds[] = {
+	/* Standard Alert Sounds */
+	{ "network-connectivity-lost",		0, NULL },
+	{ "network-connectivity-error",		0, NULL },
+	{ "dialog-error",			0, NULL },
+	{ "battery-low",			0, NULL },
+	{ "suspend-error",			0, NULL },
+	{ "software-update-urgent",		0, NULL },
+	{ "power-unplug-battery-low",		0, NULL },
+	/* Standard Notifications Sounds */
+	{ "message-new-instant",		1, NULL },
+	{ "message-new-email",			1, NULL },
+	{ "complete-media-burn",		1, NULL },
+	{ "complete-media-rip",			1, NULL },
+	{ "complete-download",			1, NULL },
+	{ "complete-copy",			1, NULL },
+	{ "complete-scan",			1, NULL },
+	{ "phone-incoming-call",		1, NULL },
+	{ "phone-outgoing-busy",		1, NULL },
+	{ "phone-hangup",			1, NULL },
+	{ "phone-failure",			1, NULL },
+	{ "network-connectivity-established",	1, NULL },
+	{ "system-bootup",			1, NULL },
+	{ "system-ready",			1, NULL },
+	{ "system-shutdown",			1, NULL },
+	{ "search-results",			1, NULL },
+	{ "search-results-empty",		1, NULL },
+	{ "desktop-login",			1, NULL },
+	{ "desktop-logout",			1, NULL },
+	{ "desktop-screen-lock",		1, NULL },
+	{ "desktop-screen-unlock",		1, NULL },
+	{ "service-login",			1, NULL },
+	{ "service-logout",			1, NULL },
+	{ "battery-caution",			1, NULL },
+	{ "battery-full",			1, NULL },
+	{ "dialog-warning",			1, NULL },
+	{ "dialog-information",			1, NULL },
+	{ "dialog-question",			1, NULL },
+	{ "software-update-available",		1, NULL },
+	{ "device-added",			1, NULL },
+	{ "device-removed",			1, NULL },
+	{ "window-new",				1, NULL },
+	{ "power-plug",				1, NULL },
+	{ "power-unplug",			1, NULL },
+	{ "suspend-start",			1, NULL },
+	{ "suspend-resume",			1, NULL },
+	{ "lid-open",				1, NULL },
+	{ "lid-close",				1, NULL },
+	{ "alarm-clock-elapsed",		1, NULL },
+	{ "window-attention-active",		1, NULL },
+	{ "window-attention-inactive",		1, NULL },
+	/* Standard Action Sounds */
+	{ "phone-outgoing-calling",		2, NULL },
+	{ "message-sent-instant",		2, NULL },
+	{ "message-sent-email",			2, NULL },
+	{ "bell-terminal",			2, NULL },
+	{ "bell-window-system",			2, NULL },
+	{ "trash-empty",			2, NULL },
+	{ "item-deleted",			2, NULL },
+	{ "file-trash",				2, NULL },
+	{ "camera-shutter",			2, NULL },
+	{ "camera-focus",			2, NULL },
+	{ "screen-capture",			2, NULL },
+	{ "count-down",				2, NULL },
+	{ "completion-success",			2, NULL },
+	{ "completion-fail",			2, NULL },
+	{ "completion-partial",			2, NULL },
+	{ "completion-rotation",		2, NULL },
+	{ "audio-volume-change",		2, NULL },
+	{ "audio-channel-left",			2, NULL },
+	{ "audio-channel-right",		2, NULL },
+	{ "audio-channel-front-left",		2, NULL },
+	{ "audio-channel-front-right",		2, NULL },
+	{ "audio-channel-front-center",		2, NULL },
+	{ "audio-channel-rear-left",		2, NULL },
+	{ "audio-channel-rear-right",		2, NULL },
+	{ "audio-channel-rear-center",		2, NULL },
+	{ "audio-channel-lfe",			2, NULL },
+	{ "audio-channel-side-left",		2, NULL },
+	{ "audio-channel-side-right",		2, NULL },
+	{ "audio-test-signal",			2, NULL },
+	/* Standard Input Feedback Sounds */
+	{ "window-close",			3, NULL },
+	{ "window-slide-in",			3, NULL },
+	{ "window-slide-out",			3, NULL },
+	{ "window-minimized",			3, NULL },
+	{ "window-unminimized",			3, NULL },
+	{ "window-maximized",			3, NULL },
+	{ "window-unmaximized",			3, NULL },
+	{ "window-inactive-click",		3, NULL },
+	{ "window-move-start",			3, NULL },
+	{ "window-move-end",			3, NULL },
+	{ "window-resize-start",		3, NULL },
+	{ "window-resize-end",			3, NULL },
+	{ "desktop-switch-left",		3, NULL },
+	{ "desktop-switch-right",		3, NULL },
+	{ "window-switch",			3, NULL },
+	{ "notebook-tab-changed",		3, NULL },
+	{ "scroll-up",				3, NULL },
+	{ "scroll-down",			3, NULL },
+	{ "scroll-left",			3, NULL },
+	{ "scroll-right",			3, NULL },
+	{ "scroll-up-end",			3, NULL },
+	{ "scroll-down-end",			3, NULL },
+	{ "scroll-left-end",			3, NULL },
+	{ "scroll-right-end",			3, NULL },
+	{ "dialog-ok",				3, NULL },
+	{ "dialog-cancel",			3, NULL },
+	{ "drag-start",				3, NULL },
+	{ "drag-accept",			3, NULL },
+	{ "drag-fail",				3, NULL },
+	{ "link-pressed",			3, NULL },
+	{ "link-released",			3, NULL },
+	{ "menu-click",				3, NULL },
+	{ "button-toggle-on",			3, NULL },
+	{ "button-toggle-off",			3, NULL },
+	{ "expander-toggle-on",			3, NULL },
+	{ "expander-toggle-off",		3, NULL },
+	{ "menu-popup",				3, NULL },
+	{ "menu-popdown",			3, NULL },
+	{ "menu-replace",			3, NULL },
+	{ "tooltip-popup",			3, NULL },
+	{ "tooltip-popdown",			3, NULL },
+	{ "item-selected",			3, NULL },
+	/* Standard Game Sounds */
+	{ "game-over-winner",			4, NULL },
+	{ "game-over-loser",			4, NULL },
+	{ "game-card-shuffle",			4, NULL },
+	{ "game-human-move",			4, NULL },
+	{ "game-computer-move",			4, NULL },
+	{ NULL,					0, NULL }
+};
 
 static const char *StandardSoundNames[] = {
 	/* Standard Alert Sounds */
@@ -530,6 +682,10 @@ parse_file(char *path)
 				*(*s) = '\0';
 			g_strfreev(profiles);
 			profiles = g_strdupv(contexts);
+			g_free(e->OutputProfile);
+			e->OutputProfile = g_strjoinv(";", profiles);
+			g_free(e->Context);
+			e->Context = g_strjoinv(";", contexts);
 			ok = 1;
 		} else if (strcmp(key, "Hidden") == 0) {
 			free(e->Hidden);
@@ -810,10 +966,10 @@ lookup_themes(void)
 }
 
 static void
-lookup_subdir(char *subdirs, const char *theme, const char *profile)
+lookup_subdir(char *subdirs, const char *theme, const char *profile, const char *context)
 {
-	char *dirs, *dirsaveptr = NULL, *pfls, *pflsaveptr = NULL;
-	char *dir, *pfl;
+	char *dirs, *dirsaveptr = NULL, *pfls, *pflsaveptr = NULL, *ctxs, *ctxsaveptr;
+	char *dir, *pfl, *ctx;
 
 	if (!theme)
 		return;
@@ -834,7 +990,12 @@ lookup_subdir(char *subdirs, const char *theme, const char *profile)
 			free_entry(e);
 			return;
 		}
-		if (!(dirs = strdup(e->Directories)) || !(pfls = strdup(e->OutputProfile))) {
+		if (!e->Context) {
+			EPRINTF("no contexts!\n");
+			free_entry(e);
+			return;
+		}
+		if (!(dirs = strdup(e->Directories)) || !(pfls = strdup(e->OutputProfile)) || !(ctxs = strdup(e->Context))) {
 			EPRINTF("cannot dup strings!\n");
 			free_entry(e);
 			return;
@@ -843,12 +1004,17 @@ lookup_subdir(char *subdirs, const char *theme, const char *profile)
 	}
 	DPRINTF(1, "theme %s dirs '%s'\n", theme, dirs);
 	DPRINTF(1, "theme %s pfls '%s'\n", theme, pfls);
+	DPRINTF(1, "theme %s ctxs '%s'\n", theme, ctxs);
 	/* technically these should be semicolon separated, some sometimes aren't */
-	for (dir = strtok_r(dirs, " ,;:", &dirsaveptr), pfl = strtok_r(pfls, " ,;:", &pflsaveptr);
-	     dir && pfl;
-	     dir = strtok_r(NULL, " ,;:", &dirsaveptr), pfl = strtok_r(NULL, " ,;:", &pflsaveptr)) {
-		DPRINTF(1, "checking profile '%s' for subdir '%s'\n", pfl, dir);
-		if (!strcmp(pfl, profile)) {
+	for (dir = strtok_r(dirs, " ,;:", &dirsaveptr),
+	     pfl = strtok_r(pfls, " ,;:", &pflsaveptr),
+	     ctx = strtok_r(ctxs, " ,;:", &ctxsaveptr);
+	     dir;
+	     dir = dir ? strtok_r(NULL, " ,;:", &dirsaveptr) : NULL,
+	     pfl = pfl ? strtok_r(NULL, " ,;:", &pflsaveptr) : NULL,
+	     ctx = ctx ? strtok_r(NULL, " ,;:", &ctxsaveptr) : NULL) {
+		DPRINTF(1, "checking profile '%s' and context '%s' for subdir '%s'\n", pfl, ctx, dir);
+		if ((!profile || !strcmp(pfl ? : "", profile)) && (!context || !strcmp(ctx ? : "", context))) {
 			if (*subdirs)
 				strncat(subdirs, ";", PATH_MAX);
 			strncat(subdirs, dir, PATH_MAX);
@@ -856,16 +1022,17 @@ lookup_subdir(char *subdirs, const char *theme, const char *profile)
 	}
 	free(dirs);
 	free(pfls);
+	free(ctxs);
 	return;
 }
 
 static char *
-lookup_subdirs(const char *theme, const char *profile)
+lookup_subdirs(const char *theme, const char *profile, const char *context)
 {
 	char *subdirs;
 
 	subdirs = calloc(PATH_MAX + 1, sizeof(*subdirs));
-	lookup_subdir(subdirs, theme, profile);
+	lookup_subdir(subdirs, theme, profile, context);
 	return (subdirs);
 }
 
@@ -881,7 +1048,7 @@ lookup_file(const char *name)
 {
 	const gchar *const *locales, *const *locale;
 	char *path = NULL, *eventid, *home, *p, *tlist, *themes, *slist, *subdirs;
-	const char *theme, *profile, *subdir;
+	const char *theme, *profile, *context, *subdir;
 	struct stat st;
 	int found_one = 0;
 
@@ -914,142 +1081,148 @@ lookup_file(const char *name)
 					DPRINTF(1, "skipping profile '%s' for null theme\n", profile);
 					continue;
 				}
-				slist = lookup_subdirs(theme, profile);
-				DPRINTF(1, "subdir list is '%s' for theme '%s' and profile '%s'\n", slist, theme, profile);
-				for (subdirs = slist;;) {
-					if (!*subdirs) {
-						subdir = NULL;
-						if (theme) {
-							DPRINTF(1, "skipping empty subdir for theme '%s', profile '%s'\n", theme, profile);
-							break;
-						}
-					} else if ((p = strchr(subdirs, ';'))) {
-						*p = '\0';
-						subdir = subdirs;
-						subdirs = p + 1;
-					} else {
-						subdir = subdirs;
-						subdirs = subdirs + strlen(subdirs);
+				for (context = options.context ? : ""; context; context = *context ? "" : NULL) {
+					if (!theme && *context) {
+						DPRINTF(1, "skipping context '%s' for null theme\n", context);
+						continue;
 					}
-					if (subdir)
-						DPRINTF(1, "searching with subdir '%s'\n", subdir);
-					else
-						DPRINTF(1, "searching without a subdir\n");
-					strncpy(eventid, name, PATH_MAX);
-					for (;;) {
-						for (locale = locales;; locale++) {
-							char *list, *dirs, *env;
+					slist = lookup_subdirs(theme, profile, context);
+					DPRINTF(1, "subdir list is '%s' for theme '%s', profile '%s', context '%s'\n", slist, theme, profile, context);
+					for (subdirs = slist;;) {
+						if (!*subdirs) {
+							subdir = NULL;
+							if (theme) {
+								DPRINTF(1, "skipping empty subdir for theme '%s', profile '%s', context '%s'\n", theme, profile, context);
+								break;
+							}
+						} else if ((p = strchr(subdirs, ';'))) {
+							*p = '\0';
+							subdir = subdirs;
+							subdirs = p + 1;
+						} else {
+							subdir = subdirs;
+							subdirs = subdirs + strlen(subdirs);
+						}
+						if (subdir)
+							DPRINTF(1, "searching with subdir '%s'\n", subdir);
+						else
+							DPRINTF(1, "searching without a subdir\n");
+						strncpy(eventid, name, PATH_MAX);
+						for (;;) {
+							for (locale = locales;; locale++) {
+								char *list, *dirs, *env;
 
-							if (!theme && *locale) {
-								DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
+								if (!theme && *locale) {
+									DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
+									continue;
+								}
+								/* strip any sound file extension */
+								if ((p = strstr(eventid, ".disabled")) == eventid + strlen(eventid) - 9)
+									*p = '\0';
+								if ((p = strstr(eventid, ".oga")) == eventid + strlen(eventid) - 4)
+									*p = '\0';
+								if ((p = strstr(eventid, ".ogg")) == eventid + strlen(eventid) - 4)
+									*p = '\0';
+								if ((p = strstr(eventid, ".wav")) == eventid + strlen(eventid) - 4)
+									*p = '\0';
+								if ((p = strstr(eventid, ".sound")) == eventid + strlen(eventid) - 6)
+									*p = '\0';
+
+								list = calloc(PATH_MAX + 1, sizeof(*list));
+								dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
+								if ((env = getenv("XDG_DATA_HOME")) && *env)
+									strncpy(list, env, PATH_MAX);
+								else {
+									strncpy(list, home, PATH_MAX);
+									strncat(list, "/.local/share", PATH_MAX);
+								}
+								if (options.skiptilde) {
+									strncpy(list, dirs, PATH_MAX);
+								} else {
+									strncat(list, ":", PATH_MAX);
+									strncat(list, dirs, PATH_MAX);
+								}
+								for (dirs = list; !path && *dirs;) {
+									if (*dirs == '.' && options.skipdot)
+										continue;
+									if (*dirs == '~' && options.skiptilde)
+										continue;
+									if ((p = strchr(dirs, ':'))) {
+										*p = '\0';
+										path = strdup(dirs);
+										dirs = p + 1;
+									} else {
+										path = strdup(dirs);
+										*dirs = '\0';
+									}
+									path = realloc(path, PATH_MAX + 1);
+									strncat(path, "/sounds/", PATH_MAX);
+									if (theme) {
+										strncat(path, theme, PATH_MAX);
+										strncat(path, "/", PATH_MAX);
+										strncat(path, subdir, PATH_MAX);
+										strncat(path, "/", PATH_MAX);
+										if (*locale) {
+											strncat(path, *locale, PATH_MAX);
+											strncat(path, "/", PATH_MAX);
+										}
+									}
+									strncat(path, eventid, PATH_MAX);
+									p = path + strlen(path);
+									strcpy(p, ".disabled");
+									DPRINTF(1, "checking '%s'\n", path);
+									if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
+										free(list);
+										free(eventid);
+										free(path);
+										free(tlist);
+										return (found_one);
+									}
+									strcpy(p, ".oga");
+									DPRINTF(1, "checking '%s'\n", path);
+									if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
+										free(list);
+										free(eventid);
+										free(path);
+										free(tlist);
+										return (found_one);
+									}
+									strcpy(p, ".ogg");
+									DPRINTF(1, "checking '%s'\n", path);
+									if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
+										free(list);
+										free(eventid);
+										free(path);
+										free(tlist);
+										return (found_one);
+									}
+									strcpy(p, ".wav");
+									DPRINTF(1, "checking '%s'\n", path);
+									if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
+										free(list);
+										free(eventid);
+										free(path);
+										free(tlist);
+										return (found_one);
+									}
+									free(path);
+									path = NULL;
+								}
+								free(list);
+								if (!*locale)
+									break;
+							}
+							if ((p = strrchr(eventid, '-'))) {
+								*p = '\0';
 								continue;
 							}
-							/* strip any sound file extension */
-							if ((p = strstr(eventid, ".disabled")) == eventid + strlen(eventid) - 9)
-								*p = '\0';
-							if ((p = strstr(eventid, ".oga")) == eventid + strlen(eventid) - 4)
-								*p = '\0';
-							if ((p = strstr(eventid, ".ogg")) == eventid + strlen(eventid) - 4)
-								*p = '\0';
-							if ((p = strstr(eventid, ".wav")) == eventid + strlen(eventid) - 4)
-								*p = '\0';
-							if ((p = strstr(eventid, ".sound")) == eventid + strlen(eventid) - 6)
-								*p = '\0';
-
-							list = calloc(PATH_MAX + 1, sizeof(*list));
-							dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
-							if ((env = getenv("XDG_DATA_HOME")) && *env)
-								strncpy(list, env, PATH_MAX);
-							else {
-								strncpy(list, home, PATH_MAX);
-								strncat(list, "/.local/share", PATH_MAX);
-							}
-							if (options.skiptilde) {
-								strncpy(list, dirs, PATH_MAX);
-							} else {
-								strncat(list, ":", PATH_MAX);
-								strncat(list, dirs, PATH_MAX);
-							}
-							for (dirs = list; !path && *dirs;) {
-								if (*dirs == '.' && options.skipdot)
-									continue;
-								if (*dirs == '~' && options.skiptilde)
-									continue;
-								if ((p = strchr(dirs, ':'))) {
-									*p = '\0';
-									path = strdup(dirs);
-									dirs = p + 1;
-								} else {
-									path = strdup(dirs);
-									*dirs = '\0';
-								}
-								path = realloc(path, PATH_MAX + 1);
-								strncat(path, "/sounds/", PATH_MAX);
-								if (theme) {
-									strncat(path, theme, PATH_MAX);
-									strncat(path, "/", PATH_MAX);
-									strncat(path, subdir, PATH_MAX);
-									strncat(path, "/", PATH_MAX);
-									if (*locale) {
-										strncat(path, *locale, PATH_MAX);
-										strncat(path, "/", PATH_MAX);
-									}
-								}
-								strncat(path, eventid, PATH_MAX);
-								p = path + strlen(path);
-								strcpy(p, ".disabled");
-								DPRINTF(1, "checking '%s'\n", path);
-								if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
-									free(list);
-									free(eventid);
-									free(path);
-									free(tlist);
-									return (found_one);
-								}
-								strcpy(p, ".oga");
-								DPRINTF(1, "checking '%s'\n", path);
-								if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
-									free(list);
-									free(eventid);
-									free(path);
-									free(tlist);
-									return (found_one);
-								}
-								strcpy(p, ".ogg");
-								DPRINTF(1, "checking '%s'\n", path);
-								if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
-									free(list);
-									free(eventid);
-									free(path);
-									free(tlist);
-									return (found_one);
-								}
-								strcpy(p, ".wav");
-								DPRINTF(1, "checking '%s'\n", path);
-								if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
-									free(list);
-									free(eventid);
-									free(path);
-									free(tlist);
-									return (found_one);
-								}
-								free(path);
-								path = NULL;
-							}
-							free(list);
-							if (!*locale)
-								break;
+							break;
 						}
-						if ((p = strrchr(eventid, '-'))) {
-							*p = '\0';
-							continue;
-						}
-						break;
+						if (!subdir)
+							break;
 					}
-					if (!subdir)
-						break;
+					free(slist);
 				}
-				free(slist);
 			}
 			if (!theme)
 				break;
@@ -1074,7 +1247,7 @@ list_paths(void)
 {
 	const gchar *const *locales, *const *locale;
 	char *home, *p, *tlist, *themes, *slist, *subdirs;
-	const char *theme, *profile, *subdir;
+	const char *theme, *profile, *context, *subdir;
 
 	locales = g_get_language_names();
 	tlist = lookup_themes();
@@ -1102,92 +1275,97 @@ list_paths(void)
 				DPRINTF(1, "skipping profile '%s' for null theme\n", profile);
 				continue;
 			}
-			slist = lookup_subdirs(theme, profile);
-			DPRINTF(1, "subdir list is '%s' for theme '%s' and profile '%s'\n", slist,
-				theme, profile);
-			for (subdirs = slist;;) {
-				if (!*subdirs) {
-					subdir = NULL;
-					if (theme) {
-						DPRINTF(1, "skipping empty subdir for theme '%s', profile '%s'\n", theme, profile);
-						break;
-					}
-					DPRINTF(1, "using empty subdir for null theme\n");
-				} else if ((p = strchr(subdirs, ';'))) {
-					*p = '\0';
-					subdir = subdirs;
-					subdirs = p + 1;
-				} else {
-					subdir = subdirs;
-					subdirs = subdirs + strlen(subdirs);
+			for (context = options.context ? : ""; context; context = *context ? "" : NULL) {
+				if (!theme && *context) {
+					DPRINTF(1, "skipping context '%s' for null theme\n", context);
+					continue;
 				}
-				if (subdir)
-					DPRINTF(1, "searching with subdir '%s'\n", subdir);
-				else
-					DPRINTF(1, "searching without a subdir\n");
-
-				for (locale = locales;; locale++) {
-					char *list, *dirs, *env;
-
-					if (!theme && *locale) {
-						DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
-						continue;
-					}
-					list = calloc(PATH_MAX + 1, sizeof(*list));
-					dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
-					if ((env = getenv("XDG_DATA_HOME")) && *env)
-						strncpy(list, env, PATH_MAX);
-					else {
-						strncpy(list, home, PATH_MAX);
-						strncat(list, "/.local/share", PATH_MAX);
-					}
-					if (options.skiptilde) {
-						strncpy(list, dirs, PATH_MAX);
-					} else {
-						strncat(list, ":", PATH_MAX);
-						strncat(list, dirs, PATH_MAX);
-					}
-					for (dirs = list; dirs && *dirs;) {
-						char *p, *path;
-						struct stat st;
-
-						if (*dirs == '.' && options.skipdot)
-							continue;
-						if (*dirs == '~' && options.skiptilde)
-							continue;
-						if ((p = strchr(dirs, ':'))) {
-							*p = '\0';
-							path = strdup(dirs);
-							dirs = p + 1;
-						} else {
-							path = strdup(dirs);
-							*dirs = '\0';
-						}
-						path = realloc(path, PATH_MAX + 1);
-						strncat(path, "/sounds", PATH_MAX);
+				slist = lookup_subdirs(theme, profile, context);
+				DPRINTF(1, "subdir list is '%s' for theme '%s', profile '%s', context '%s'\n", slist, theme, profile, context);
+				for (subdirs = slist;;) {
+					if (!*subdirs) {
+						subdir = NULL;
 						if (theme) {
-							strncat(path, "/", PATH_MAX);
-							strncat(path, theme, PATH_MAX);
-							strncat(path, "/", PATH_MAX);
-							strncat(path, subdir, PATH_MAX);
-							if (*locale) {
-								strncat(path, "/", PATH_MAX);
-								strncat(path, *locale, PATH_MAX);
-							}
+							DPRINTF(1, "skipping empty subdir for theme '%s', profile '%s', context '%s'\n", theme, profile, context);
+							break;
 						}
-						DPRINTF(1, "checking '%s'\n", path);
-						if (!stat(path, &st))
-							output_path(home, NULL, path);
-						free(path);
+						DPRINTF(1, "using empty subdir for null theme\n");
+					} else if ((p = strchr(subdirs, ';'))) {
+						*p = '\0';
+						subdir = subdirs;
+						subdirs = p + 1;
+					} else {
+						subdir = subdirs;
+						subdirs = subdirs + strlen(subdirs);
 					}
-					free(list);
-					if (!*locale)
+					if (subdir)
+						DPRINTF(1, "searching with subdir '%s'\n", subdir);
+					else
+						DPRINTF(1, "searching without a subdir\n");
+
+					for (locale = locales;; locale++) {
+						char *list, *dirs, *env;
+
+						if (!theme && *locale) {
+							DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
+							continue;
+						}
+						list = calloc(PATH_MAX + 1, sizeof(*list));
+						dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
+						if ((env = getenv("XDG_DATA_HOME")) && *env)
+							strncpy(list, env, PATH_MAX);
+						else {
+							strncpy(list, home, PATH_MAX);
+							strncat(list, "/.local/share", PATH_MAX);
+						}
+						if (options.skiptilde) {
+							strncpy(list, dirs, PATH_MAX);
+						} else {
+							strncat(list, ":", PATH_MAX);
+							strncat(list, dirs, PATH_MAX);
+						}
+						for (dirs = list; dirs && *dirs;) {
+							char *p, *path;
+							struct stat st;
+
+							if (*dirs == '.' && options.skipdot)
+								continue;
+							if (*dirs == '~' && options.skiptilde)
+								continue;
+							if ((p = strchr(dirs, ':'))) {
+								*p = '\0';
+								path = strdup(dirs);
+								dirs = p + 1;
+							} else {
+								path = strdup(dirs);
+								*dirs = '\0';
+							}
+							path = realloc(path, PATH_MAX + 1);
+							strncat(path, "/sounds", PATH_MAX);
+							if (theme) {
+								strncat(path, "/", PATH_MAX);
+								strncat(path, theme, PATH_MAX);
+								strncat(path, "/", PATH_MAX);
+								strncat(path, subdir, PATH_MAX);
+								if (*locale) {
+									strncat(path, "/", PATH_MAX);
+									strncat(path, *locale, PATH_MAX);
+								}
+							}
+							DPRINTF(1, "checking '%s'\n", path);
+							if (!stat(path, &st))
+								output_path(home, NULL, path);
+							free(path);
+						}
+						free(list);
+						if (!*locale)
+							break;
+					}
+					if (!subdir)
 						break;
 				}
-				if (!subdir)
-					break;
+				free(slist);
 			}
-			free(slist);
 		}
 		if (!theme)
 			break;
@@ -1264,8 +1442,38 @@ list_sound_events(void)
 {
 	Event *event;
 
-	for (event = events; event; event = event->next)
-		fprintf(stdout, "%s: %s\n", event->key, event->file);
+	if (options.context && *options.context) {
+		const char **ctx;
+		int context;
+
+		/* need to filter by standard context */
+		for (context = 0, ctx = StandardContexts; ctx && *ctx; ctx++, context++)
+			if (!strcmp(*ctx, options.context))
+				break;
+		for (event = events; event; event = event->next) {
+			const struct Sound *s;
+			const char *p;
+			size_t len;
+
+			len = strlen(event->key);
+
+			for (s = StandardSounds; s && s->eventid; s++)
+				if (!strcmp(event->key, s->eventid) || ((p = strstr(s->eventid, event->key)) == s->eventid && (p[len] == '-' || p[len] == '\0')))
+					break;
+			if (!s->eventid) {
+				DPRINTF(1, "skipping non-standard sound '%s[%d]'\n", event->key, context);
+				continue;
+			}
+			if (s->eventid && s->context != context) {
+				DPRINTF(1, "skipping '%s[%d]' which matches '%s[%d]'\n", event->key, context, s->eventid, s->context);
+				continue;
+			}
+			fprintf(stdout, "%s: %s\n", event->key, event->file);
+		}
+	} else {
+		for (event = events; event; event = event->next)
+			fprintf(stdout, "%s: %s\n", event->key, event->file);
+	}
 }
 
 static void
@@ -1351,18 +1559,31 @@ get_events(char *path, const char *theme)
 static void
 do_listem(int argc, char *argv[])
 {
-	const char **eventid;
+	const struct Sound *sound;
+	int context = -1;
 
 	(void) argc;
 	(void) argv;
-	/* XXX: the problem with this options.headers approach is not printing headers
-	   for missing standard events: have lookup_file return success or failure? */
+	(void) StandardSoundNames;
+	if (options.context && *options.context) {
+		const char **ctx;
+		int n;
+
+		for (n = 0, ctx = StandardContexts; ctx && *ctx; ctx++, n++) {
+			if (!strcmp(*ctx, options.context)) {
+				context = n;
+				break;
+			}
+		}
+	}
 	options.headers = 1;
-	for (eventid = StandardSoundNames; eventid && *eventid; eventid++) {
+	for (sound = StandardSounds; sound && sound->eventid; sound++) {
+		if (context != -1 && sound->context != context)
+			continue;
 		if (!options.headers)
-			fprintf(stdout, "%s: \n", *eventid);
-		if (!lookup_file(*eventid) && options.headers)
-			fprintf(stdout, "%s: \n", *eventid);
+			fprintf(stdout, "%s: \n", sound->eventid);
+		if (!lookup_file(sound->eventid) && options.headers)
+			fprintf(stdout, "%s: \n", sound->eventid);
 	}
 }
 
@@ -1371,7 +1592,7 @@ do_show(int argc, char *argv[])
 {
 	const gchar *const *locales, *const *locale;
 	char *home, *p, *tlist, *themes, *slist, *subdirs;
-	const char *theme, *profile, *subdir;
+	const char *theme, *profile, *context, *subdir;
 
 	(void) argc;
 	(void) argv;
@@ -1402,89 +1623,94 @@ do_show(int argc, char *argv[])
 				DPRINTF(1, "skipping profile '%s' for null theme\n", profile);
 				continue;
 			}
-			slist = lookup_subdirs(theme, profile);
-			DPRINTF(1, "subdir list is '%s' for theme '%s' and profile '%s'\n", slist,
-				theme, profile);
-			for (subdirs = slist;;) {
-				if (!*subdirs) {
-					subdir = NULL;
-					if (theme) {
-						DPRINTF(1, "skipping empty subdir for theme '%s', profile '%s'\n", theme, profile);
-						break;
-					}
-				} else if ((p = strchr(subdirs, ';'))) {
-					*p = '\0';
-					subdir = subdirs;
-					subdirs = p + 1;
-				} else {
-					subdir = subdirs;
-					subdirs = subdirs + strlen(subdirs);
+			for (context = options.context ? : ""; context; context = *context ? "" : NULL) {
+				if (!theme && *context) {
+					DPRINTF(1, "skipping context '%s' for null theme\n", context);
+					continue;
 				}
-				if (subdir)
-					DPRINTF(1, "searching with subdir '%s'\n", subdir);
-				else
-					DPRINTF(1, "searching without a subdir\n");
-
-				for (locale = locales;; locale++) {
-					char *list, *dirs, *env;
-
-					if (!theme && *locale) {
-						DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
-						continue;
-					}
-					list = calloc(PATH_MAX + 1, sizeof(*list));
-
-					dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
-					if ((env = getenv("XDG_DATA_HOME")) && *env) {
-						strncpy(list, env, PATH_MAX);
-					} else {
-						strncpy(list, home, PATH_MAX);
-						strncat(list, "/.local/share", PATH_MAX);
-					}
-					if (options.skiptilde) {
-						strncpy(list, dirs, PATH_MAX);
-					} else {
-						strncat(list, ":", PATH_MAX);
-						strncat(list, dirs, PATH_MAX);
-					}
-					for (dirs = list; dirs && *dirs;) {
-						char *p, *path;
-
-						if (*dirs == '.' && options.skipdot)
-							continue;
-						if (*dirs == '~' && options.skiptilde)
-							continue;
-						if ((p = strchr(dirs, ':'))) {
-							*p = '\0';
-							path = strdup(dirs);
-							dirs = p + 1;
-						} else {
-							path = strdup(dirs);
-							*dirs = '\0';
-						}
-						path = realloc(path, PATH_MAX + 1);
-						strncat(path, "/sounds", PATH_MAX);
+				slist = lookup_subdirs(theme, profile, context);
+				DPRINTF(1, "subdir list is '%s' for theme '%s', profile '%s', context '%s'\n", slist, theme, profile, context);
+				for (subdirs = slist;;) {
+					if (!*subdirs) {
+						subdir = NULL;
 						if (theme) {
-							strncat(path, "/", PATH_MAX);
-							strncat(path, theme, PATH_MAX);
-							strncat(path, "/", PATH_MAX);
-							strncat(path, subdir, PATH_MAX);
-							if (*locale) {
-								strncat(path, "/", PATH_MAX);
-								strncat(path, *locale, PATH_MAX);
-							}
+							DPRINTF(1, "skipping empty subdir for theme '%s', profile '%s', context '%s'\n", theme, profile, context);
+							break;
 						}
-						get_events(path, theme);
-						free(path);
+					} else if ((p = strchr(subdirs, ';'))) {
+						*p = '\0';
+						subdir = subdirs;
+						subdirs = p + 1;
+					} else {
+						subdir = subdirs;
+						subdirs = subdirs + strlen(subdirs);
 					}
-					free(list);
-					if (!*locale)
+					if (subdir)
+						DPRINTF(1, "searching with subdir '%s'\n", subdir);
+					else
+						DPRINTF(1, "searching without a subdir\n");
+
+					for (locale = locales;; locale++) {
+						char *list, *dirs, *env;
+
+						if (!theme && *locale) {
+							DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
+							continue;
+						}
+						list = calloc(PATH_MAX + 1, sizeof(*list));
+
+						dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
+						if ((env = getenv("XDG_DATA_HOME")) && *env) {
+							strncpy(list, env, PATH_MAX);
+						} else {
+							strncpy(list, home, PATH_MAX);
+							strncat(list, "/.local/share", PATH_MAX);
+						}
+						if (options.skiptilde) {
+							strncpy(list, dirs, PATH_MAX);
+						} else {
+							strncat(list, ":", PATH_MAX);
+							strncat(list, dirs, PATH_MAX);
+						}
+						for (dirs = list; dirs && *dirs;) {
+							char *p, *path;
+
+							if (*dirs == '.' && options.skipdot)
+								continue;
+							if (*dirs == '~' && options.skiptilde)
+								continue;
+							if ((p = strchr(dirs, ':'))) {
+								*p = '\0';
+								path = strdup(dirs);
+								dirs = p + 1;
+							} else {
+								path = strdup(dirs);
+								*dirs = '\0';
+							}
+							path = realloc(path, PATH_MAX + 1);
+							strncat(path, "/sounds", PATH_MAX);
+							if (theme) {
+								strncat(path, "/", PATH_MAX);
+								strncat(path, theme, PATH_MAX);
+								strncat(path, "/", PATH_MAX);
+								strncat(path, subdir, PATH_MAX);
+								if (*locale) {
+									strncat(path, "/", PATH_MAX);
+									strncat(path, *locale, PATH_MAX);
+								}
+							}
+							get_events(path, theme);
+							free(path);
+						}
+						free(list);
+						if (!*locale)
+							break;
+					}
+					if (!subdir)
 						break;
 				}
-				if (!subdir)
-					break;
+				free(slist);
 			}
-			free(slist);
 		}
 		if (!theme)
 			break;
@@ -1792,6 +2018,7 @@ main(int argc, char *argv[])
 			{"theme",	required_argument,	NULL,	'N'},
 			{"profile",	required_argument,	NULL,	'P'},
 			{"standard",	no_argument,		NULL,	'S'},
+			{"headers",	no_argument,		NULL,	'r'},
 			{"deref",	no_argument,		NULL,	'd'},
 			{"context",	required_argument,	NULL,	'c'},
 
@@ -1805,10 +2032,10 @@ main(int argc, char *argv[])
 		};
 		/* *INDENT-ON* */
 
-		c = getopt_long_only(argc, argv, "snlaotOTN:P:Sdc:D::v::hVCH?", long_options,
+		c = getopt_long_only(argc, argv, "snlaotOTN:P:Srdc:D::v::hVCH?", long_options,
 				     &option_index);
 #else				/* _GNU_SOURCE */
-		c = getopt(argc, argv, "snlaotOTN:P:Sdc:DvhVCH?");
+		c = getopt(argc, argv, "snlaotOTN:P:Srdc:DvhVCH?");
 #endif				/* _GNU_SOURCE */
 		if (c == -1) {
 			if (options.debug)
@@ -1883,6 +2110,9 @@ main(int argc, char *argv[])
 			break;
 		case 'S':	/* -S, --standard */
 			options.standard = 1;
+			break;
+		case 'r':	/* -r, --headers */
+			options.headers = !options.headers;
 			break;
 		case 'd':	/* -d, --deref */
 			options.dereflinks = 1;
