@@ -76,6 +76,8 @@ the following options are specified, the command mode changes:
 
 =over
 
+=item [B<-W>, B<--whereis>]
+
 =item B<-l>, B<--list>
 
 Instead of searching for an event identifier, print the directories that
@@ -98,24 +100,127 @@ Prints detailed copying permissions and exits.
 
 =back
 
-=head2 GENERAL OPTIONS
+=head2 SELECTION OPTIONS
 
-The following general options are recognized:
+Selection options help determine which sound theme events to output.
+The following selection options are recognized:
 
 =over
 
+=item B<-S>, B<--standard>
+
+When used with the B<--show> command mode, list all standard XDG event
+names found in the freedesktop.org XDG sound naming specification,
+instead of the available ones.
+
 =item B<-a>, B<--all>
 
-Print all matching sound files, not just the first.
+Normally only the first matching event sound file for a given event
+identifier is printed or played: this option prints or plays all
+matching sound files, not just the first.
+This is similar to L<which(1)>'s B<--all> option.
 
 =item B<-o>, B<--skip-dot>
 
-Skip directories in C<XDG_DATA_DIRS> that start with a dot.
+Skip directories in C<XDG_DATA_DIRS> and C<XDG_DATA_HOME> that start
+with a dot.  This has the effect of suppressing relative paths.
+This is similar to L<which(1)>'s B<--skip-dot> option.
 
 =item B<-t>, B<--skip-tilde>
 
-Skip directories in C<XDG_DATA_DIRS> that start with a tilde and entries
-that reside in C<XDG_DATA_HOME>.
+Skip directories in C<XDG_DATA_DIRS> that start with a tilde (that is,
+the user's C<HOME> directory) and entries that reside in
+C<XDG_DATA_HOME>.  This has the effect of suppressing user overrides to
+the sound theme.
+This is similar to L<which(1)>'s B<--skip-tilde> option.
+
+=item B<-N>, B<--theme> I<THEME>
+
+Specify the sound theme name to use when looking up event identifiers.
+Defaults to the user's current GTK 2.0 then GTK 3.0 sound theme.
+Defaults, and falls back, to C<freedesktop> when no GTK 2.0 sound theme
+name is available.
+
+=item B<-P>, B<--profile> I<PROFILE>
+
+Specify the output profile to use when looking up event identifiers.
+Defaults, and falls back, to C<stereo>.
+
+=item B<-c>, B<--context> I<CONTEXT>
+
+Specifies the event context to use when looking up or listing event
+identifiers.  Only sub-directories that have this context or no
+specified context will be searched or listed.  Event identifiers that
+exist in a different context (or standard context) will be skipped.
+
+Therefore, specifying a I<CONTEXT> option and then specifying an
+I<EVENTID> argument that is a standard event that corresponds to a
+different context is not terribly useful.
+
+When used with B<--standard>, only the standard event identifiers that
+correspond to the specified context will be used.  Standard event
+identifiers that correspond to a different context will be skipped.
+When used with B<--standard>, I<CONTEXT> may be one of the following:
+
+=over
+
+=item C<Alert>
+
+Sounds to alert the user of an action or event that may have a major
+impact on the system or their current use, such as C<dialog-error>.
+
+=item C<Notification>
+
+Sounds to notify the user that the system, or their current use, has
+changed state in some way, e.g: new email arriving, new non-critical
+updates available.
+
+=item C<Action>
+
+Sounds that give the user feedback on their actions.  Sounds on taking a
+screenshot, for example.
+
+=item C<Support>
+
+Sounds that give the user feedback on their input.  Sounds on window
+opening or closing, for example.
+
+=item C<Game>
+
+Sounds used for games.
+
+=back
+
+=item B<-u>, B<--user> I<USER>
+
+Pretend to be user, I<USER>, instead of the current user when following
+the XDG sound theme procedures; however, use the same effective
+C<XDG_DATA_DIRS> and C<XDG_DATA_HOME> settings.  See also, L</USAGE>,
+below.
+
+=item B<--xdg-data-home> I<PATHSPEC>
+
+Set the C<XDG_DATA_HOME> environment variable to I<PATHSPEC> before
+examining it or performing actions.  Useful only with the B<--user>
+option.
+Any tildes (C<~>) found in I<PATHSPEC> will be replaced with the
+effective user's home directory.
+
+=item B<--xdg-data-dirs> I<PATHSPEC>
+
+Set the C<XDG_DATA_DIRS> environment variable to I<PATHSPEC> before
+examining it or performing actions.  Useful only with the B<--user>
+option.
+Any tildes (C<~>) found in I<PATHSPEC> will be replaced with the
+effective user's home directory.
+
+=back
+
+=head2 OUTPUT OPTIONS
+
+The following output options are recognized:
+
+=over
 
 =item B<-O>, B<--show-dot>
 
@@ -127,17 +232,82 @@ path.
 
 Output a tilde when a directory matches the C<HOME> directory.
 
-=item B<-N>, B<--theme> I<THEME>
+=item B<-r>, B<--headers>
 
-Specify the sound theme to use when looking up event identifiers.
-Defaults to the current GTK sound theme.
+When listing output, event identifier headers are not normally printed:
+this option, adds event identifier headers to any output.
 
-=item B<-P>, B<--profile> I<PROFILE>
+=item B<-d>, B<--deref>
 
-Specify the output profile to use when looking up event identifiers.
-Defaults, and falls back, to C<stereo>.
+Paths to sound files are normally printed even when they are symbolic
+links: this option causes symbolic links to be dereferenced before
+printing the path.
+This option is not useful when used in conjunction with the B<--play>
+option.
+
+=item B<-p>, B<--play>
+
+Normally output prints the names of the event identifiers and sound
+files on standard output: this option causes the events to also be
+played.  To only play the event identifiers, use in conjunction with the
+B<--quiet> option.
+
+=item B<-n>, B<--noplay>
+
+Normally when event sounds are played, audio option is generated: this
+option suppresses the generation of audio output and only prints the
+localized sound data associated with the event sound file.  When no
+F<.sound> sound data files exist for the selected sounds, an internal
+"C" locale string is printed instead.
+This option is only useful in conjunction with the B<--play> option
+(specified or implied).
 
 =back
+
+=head2 GENERAL OPTIONS
+
+The following general options are recognized:
+
+=over
+
+=item B<-q>, B<--quiet>
+
+Suppress normal output.  This has the same effect as the combination of
+B<--verbose>=I<0> and B<--debug>=I<0> and is intended on suppressing
+output to standard out.  The exit status and printing of diagnostics to
+standard error are unaffected.
+
+=item B<-v>, B<--verbose> [I<LEVEL>]
+
+Print diagnostic information to standard error during operation.  This
+option can be repeated to increase the verbosity of output.  The default
+level is 1.
+
+=item B<-D>, B<--debug> [I<LEVEL>]
+
+Prints debugging information to standard error during operation.  This
+option can be repeated to increase the debugging level.  The default
+level is 0.
+
+=back
+
+=head1 USAGE
+
+=head2 USER OPTION
+
+Using the B<--user> option to mimic the behaviour of another user may
+require super-user privileges to be able access files in the user's home
+directory.  Because the intention is to use the current user's
+C<XDG_DATA_DIRS> and C<XDG_DATA_HOME> environment variables with the
+user's home directory substituted, and L<sudo(1)> does not pass
+C<XDG_DATA_DIRS> and C<XDG_DATA_HOME> environment variables, it is
+necessary to use a L<bash(1)> command, such as follows, to invoke
+B<xdg-sound-whereis>:
+
+The B<--user> option is ineffective when used with the B<--skip-tilde>
+option.
+
+=head1 BEHAVIOUR
 
 =head1 EXAMPLES
 
@@ -160,6 +330,11 @@ This defaults to F<$HOME/.local/share>.  The F<sounds> sub-directory
 under this directory is the first searched to locate event sound files.
 See the XDG Sound Theme file specification for more information.
 
+When the B<--user> option is specified and the current effective user is
+root, this environment variable is ignored.  The default value of
+C<XDG_DATA_HOME> for the specified user will be used unless the
+B<--xdg-data-home> option is also specified.
+
 =item B<XDG_DATA_DIRS>
 
 Used by B<xdg-sound-whereis> to determine the system XDG data directories.
@@ -167,6 +342,11 @@ This defaults to F</usr/local/share:/usr/share>.  The F<sounds>
 sub-directory under these directories are searched in order to locate
 event sound files.  See the XDG Sound Theme file specification for more
 information.
+
+When the B<--user> option is specified and the current effective user is
+root, this environment variable is ignored.  The default value of
+C<XDG_DATA_DIRS> for the specified user will be used unless the
+B<--xdg-data-dirs> option is also specified.
 
 =back
 
