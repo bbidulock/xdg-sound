@@ -76,6 +76,7 @@
 #include <signal.h>
 #include <syslog.h>
 #include <sys/utsname.h>
+#include <sys/eventfd.h>
 
 #include <assert.h>
 #include <locale.h>
@@ -88,6 +89,7 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
+#include <canberra.h>
 
 /** @} */
 
@@ -530,6 +532,71 @@ static const char *StandardSoundNames[] = {
 	NULL
 };
 
+static ca_context *ca = NULL;
+static int efd = -1;
+
+/** @} */
+
+/** @section Playing Sounds
+  * @{ */
+
+/* borrowed from canberra-boot program from libcanberra */
+
+static void
+finish_cb(ca_context *c, uint32_t id, int error_code, void *userdata) {
+        uint64_t u = 1;
+
+	(void) c;
+	(void) id;
+	(void) error_code;
+	(void) userdata;
+        for (;;) {
+                if (write(efd, &u, sizeof(u)) > 0)
+                        break;
+
+                if (errno != EINTR) {
+                        fprintf(stderr, "write() failed: %s\n", strerror(errno));
+                        exit(EXIT_FAILURE);
+                }
+        }
+}
+
+static void
+init_play(void)
+{
+	const char *env;
+	int r;
+
+	if (!options.play || options.noplay)
+		return;
+	if ((efd = eventfd(0, EFD_CLOEXEC)) < 0) {
+		EPRINTF("Failed to create event file descriptor: %s\n", strerror(errno));
+		goto fail;
+	}
+	if ((r = ca_context_create(&ca)) < 0) {
+		EPRINTF("Failed to create context: %s\n", ca_strerror(r));
+		goto fail;
+	}
+	if ((r = ca_context_change_props(ca,
+					CA_PROP_APPLICATION_NAME, "XDG Sound",
+					CA_PROP_APPLICATION_ID, "com.unexicon.xdg-sound.which",
+					NULL)) < 0) {
+		EPRINTF("Failed to change metadata: %s\n", ca_strerror(r));
+		goto fail;
+	}
+	if ((env = getenv("DISPLAY")) && (r = ca_context_change_props(ca, CA_PROP_WINDOW_X11_SCREEN, env, NULL)) < 0) {
+		EPRINTF("Failed to change metadata: %s\n", ca_strerror(r));
+		goto fail;
+	}
+	if ((r = ca_context_open(ca)) < 0) {
+		EPRINTF("Failed to open device: %s\n", ca_strerror(r));
+		goto fail;
+	}
+	return;
+fail:
+	exit(EXIT_FAILURE);
+}
+
 /** @} */
 
 /** @section Sound Theme File Parsing
@@ -753,6 +820,53 @@ parse_file(char *path)
 
 /** @} */
 
+static void
+play_path(const char *eventid, const char *path)
+{
+	ca_proplist *p = NULL;
+	const char *env;
+	int r;
+
+	if (!options.play || options.noplay)
+		return;
+	if (!ca || efd == -1)
+		return;
+	if ((r = ca_proplist_create(&p)) < 0) {
+		EPRINTF("Failed to create property list: %s\n", ca_strerror(r));
+		return;
+	}
+	if ((r = ca_proplist_sets(p, CA_PROP_MEDIA_FILENAME, path)) < 0) {
+		EPRINTF("Failed to set media filename: %s\n", ca_strerror(r));
+		ca_proplist_destroy(p);
+		return;
+	}
+	if (eventid && (r = ca_proplist_sets(p, CA_PROP_MEDIA_NAME, eventid)) < 0) {
+		EPRINTF("Failed to set media name: %s\n", ca_strerror(r));
+		ca_proplist_destroy(p);
+		return;
+	}
+	if ((env = getenv("LANG")) && (r = ca_proplist_sets(p, CA_PROP_MEDIA_LANGUAGE, env)) < 0) {
+		EPRINTF("Failed to set media language: %s\n", ca_strerror(r));
+		ca_proplist_destroy(p);
+		return;
+	}
+	if ((r = ca_context_play_full(ca, 0, p, finish_cb, NULL)) < 0) {
+		EPRINTF("Failed to play event sound: %s\n", ca_strerror(r));
+		ca_proplist_destroy(p);
+		return;
+	}
+	for (;;) {
+		uint64_t u;
+
+		if (read(efd, &u, sizeof(u)) < 0) {
+			if (errno == EINTR)
+				break;
+			EPRINTF("read() failed: %s\n", strerror(errno));
+		} else
+			break;
+	}
+}
+
 static int
 output_path(const char *eventid, const char *path)
 {
@@ -819,6 +933,7 @@ output_path(const char *eventid, const char *path)
 		else
 			fprintf(stdout, "%s\n", line);
 	}
+	play_path(eventid, path);
 	free(cdir);
 	free(line);
 	free(file);
@@ -1364,6 +1479,7 @@ do_list(int argc, char *argv[])
 {
 	(void) argc;
 	(void) argv;
+	init_play();
 	list_paths();
 }
 
@@ -1372,6 +1488,7 @@ do_play(int argc, char *argv[])
 {
 	(void) argc;
 	(void) argv;
+	init_play();
 }
 
 static void
@@ -1550,6 +1667,7 @@ do_listem(int argc, char *argv[])
 	(void) argc;
 	(void) argv;
 	(void) StandardSoundNames;
+	init_play();
 	if (options.context && *options.context) {
 		const char **ctx;
 		int n;
@@ -1582,6 +1700,7 @@ do_show(int argc, char *argv[])
 	(void) argc;
 	(void) argv;
 
+	init_play();
 	locales = g_get_language_names();
 	tlist = lookup_themes();
 	DPRINTF(1, "theme list is '%s'\n", tlist);
@@ -1703,6 +1822,7 @@ do_whereis(int argc, char *argv[])
 {
 	(void) argc;
 	(void) argv;
+	init_play();
 }
 
 static void
@@ -1712,6 +1832,7 @@ do_which(int argc, char *argv[])
 
 	(void) argc;
 	(void) argv;
+	init_play();
 	for (eventid = options.eventids; eventid && *eventid; eventid++)
 		lookup_file(*eventid);
 }
@@ -1781,7 +1902,7 @@ get_default_dirs(void)
 					free(options.home);
 					options.home = strdup(pw->pw_dir);
 				} else {	/* guess */
-					size_t len = strnlen(options.user, PATH_MAX) + 8;
+					size_t len = strlen(options.user) + 8;
 					char *home = calloc(len, sizeof(*home));
 
 					strncpy(home, "/home/", len);
@@ -1823,11 +1944,12 @@ get_default_dirs(void)
 		if ((env = getenv("XDG_DATA_HOME")))
 			options.datahome = strdup(env);
 		else {
-			size_t len = strnlen(options.home, PATH_MAX) + 15;
-			char *data = calloc(len, sizeof(*data));
+			char *data = calloc(PATH_MAX + 1, sizeof(*data));
 
-			strncpy(data, options.home, len);
-			strncat(data, "/.local/share", len);
+			strncpy(data, options.home, PATH_MAX);
+			strncat(data, "/.local/share", PATH_MAX);
+			options.datahome = strdup(data);
+			free(data);
 		}
 	}
 }
