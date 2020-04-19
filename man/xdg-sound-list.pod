@@ -118,23 +118,23 @@ When used with B<--standard>, I<CONTEXT> may be one of the following:
 
 =over
 
-=item C<Alert>
+=item C<Alert>, C<Alerts> Directory: I<alert>
 
 Sounds to alert the user of an action or event that may have a major
 impact on the system or their current use, such as C<dialog-error>.
 
-=item C<Notification>
+=item C<Notification>, C<Notifications> Directory: I<notification>
 
 Sounds to notify the user that the system, or their current use, has
 changed state in some way, e.g: new email arriving, new non-critical
 updates available.
 
-=item C<Action>
+=item C<Support>, C<Actions> Directory: I<action>
 
 Sounds that give the user feedback on their actions.  Sounds on taking a
 screenshot, for example.
 
-=item C<Support>
+=item C<Support>, C<Actions> Directory: I<action>
 
 Sounds that give the user feedback on their input.  Sounds on window
 opening or closing, for example.
