@@ -84,6 +84,7 @@
 #include <regex.h>
 #include <wordexp.h>
 #include <execinfo.h>
+#include <pwd.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -1847,10 +1848,118 @@ set_defaults(int argc, char *argv[])
 }
 
 static void
+get_default_dirs(void)
+{
+	const char *env;
+
+	if (!options.user && !options.home) {
+		struct passwd *pw;
+
+		if ((pw = getpwuid(getuid()))) {
+			free(options.user);
+			options.user = strdup(pw->pw_name);
+			free(options.home);
+			options.home = strdup(pw->pw_dir);
+		} else {
+			if ((env = getenv("USER"))) {
+				free(options.user);
+				options.user = strdup(env);
+			}
+			if ((env = getenv("HOME"))) {
+				free(options.home);
+				options.home = strdup(env);
+			} else {
+				if (options.user) {
+					if ((pw = getpwnam(options.user))) {
+						free(options.home);
+						options.home = strdup(pw->pw_dir);
+					} else {	/* guess */
+						size_t len = strlen(options.user) + 8;
+						char *home = calloc(len, sizeof(*home));
+
+						strncpy(home, "/home/", len);
+						strncat(home, options.user, len);
+						free(options.home);
+						options.home = home;
+					}
+				} else {
+					EPRINTF("cannot determine home directory\n");
+					exit(EXIT_FAILURE);
+				}
+			}
+		}
+	} else {
+		unsetenv("XDG_DATA_DIRS");
+		unsetenv("XDG_DATA_HOME");
+		unsetenv("XDG_CONFIG_DIRS");
+		unsetenv("XDG_CONFIG_HOME");
+		unsetenv("XDG_RUNTIME_DIR");
+		if (options.user) {
+			if (!options.home) {
+				struct passwd *pw;
+
+				if ((pw = getpwnam(options.user))) {
+					free(options.home);
+					options.home = strdup(pw->pw_dir);
+				} else {	/* guess */
+					size_t len = strnlen(options.user, PATH_MAX) + 8;
+					char *home = calloc(len, sizeof(*home));
+
+					strncpy(home, "/home/", len);
+					strncat(home, options.user, len);
+					free(options.home);
+					options.home = home;
+				}
+			}
+		} else if (options.home) {
+			char *user, *p;
+
+			user = strdup(options.home);
+			/* strip trailing slashes */
+			for (p = user + strlen(user) - 1; *p == '/'; *p = '\0', p--) ;
+			if ((p = strrchr(user, '/'))) {
+				char *base;
+
+				base = strdup(p);
+				free(user);
+				user = base;
+			}
+			free(options.user);
+			options.user = user;
+		}
+	}
+	if (options.datadirs)
+		setenv("XDG_DATA_DIRS", options.datadirs, 1);
+	if (options.datahome)
+		setenv("XDG_DATA_HOME", options.datahome, 1);
+	if (!options.datadirs) {
+		free(options.datadirs);
+		if ((env = getenv("XDG_DATA_DIRS")))
+			options.datadirs = strdup(env);
+		else
+			options.datadirs = strdup("/usr/local/share:/usr/share");
+	}
+	if (!options.datahome) {
+		free(options.datahome);
+		if ((env = getenv("XDG_DATA_HOME")))
+			options.datahome = strdup(env);
+		else {
+			size_t len = strnlen(options.home, PATH_MAX) + 15;
+			char *data = calloc(len, sizeof(*data));
+
+			strncpy(data, options.home, len);
+			strncat(data, "/.local/share", len);
+		}
+	}
+}
+
+static void
 get_defaults(int argc, char *argv[])
 {
 	(void) argc;
 	(void) argv;
+
+	get_default_dirs();
 }
 
 static void
@@ -1988,23 +2097,35 @@ General Options:\n\
         print dots instead of full path\n\
     --show-tilde, -T\n\
         print tildes instead of full path\n\
-    --theme, -N THEME          [default: %2$s]\n\
+    --theme, -N THEME             [default: %2$s]\n\
         use sound theme named THEME\n\
-    --profile, -P PROFILE      [default: %3$s]\n\
+    --profile, -P PROFILE         [default: %3$s]\n\
         use sound profile named PROFILE\n\
-    --deref, -d                [default: %6$s]\n\
+    --deref, -d                   [default: %6$s]\n\
         dereference symbolic links\n\
-    --debug, -D [LEVEL]        [default: %4$d]\n\
+    --debug, -D [LEVEL]           [default: %4$d]\n\
         increment or set debug LEVEL\n\
-    --verbose, -v [LEVEL]      [default: %5$d]\n\
+    --user, -u USER               [default: %7$s]\n\
+        pretend to be specified USER\n\
+    --home, -m HOME               [default: %8$s]\n\
+        use HOME as home directory\n\
+    --xdg-data-dirs, -i DATADIRS  [default: %9$s]\n\
+        use DATADIRS for XDG_DATA_DIRS\n\
+    --xdg-data-home, -I DATAHOME  [default: %10$s]\n\
+        use DATAHOME for XDG_DATA_HOME\n\
+    --verbose, -v [LEVEL]         [default: %5$d]\n\
         increment or set output verbosity LEVEL\n\
-	this option may be repeated\n\
+        this option may be repeated\n\
 ", argv[0]
 , options.theme
 , options.profile
 , options.debug
 , options.output
 , options.dereflinks ? "enabled" : "disabled"
+, options.user
+, options.home
+, options.datadirs
+, options.datahome
 );
 }
 
