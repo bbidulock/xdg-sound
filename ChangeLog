@@ -1,5 +1,81 @@
 # created with git log --stat=76 -M -C -500|fmt -sct -w80
 
+commit a457f7b5a1c3021b8384aa6aa62e8bf6b05149e3
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sun Apr 19 07:07:47 2020 -0600
+
+    provide capability to play sounds
+
+ src/xdg-play.c          | 132 ++++++++++++++++++++++++++++++++++++++++++--
+ src/xdg-sound-list.c    | 132 ++++++++++++++++++++++++++++++++++++++++++--
+ src/xdg-sound-whereis.c | 132 ++++++++++++++++++++++++++++++++++++++++++--
+ src/xdg-sound-which.c   | 132 ++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 508 insertions(+), 20 deletions(-)
+
+commit ee1fd8385494d26d4749dd777781b56f5349dde8
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sun Apr 19 07:07:26 2020 -0600
+
+    add libcanberra for playing sounds
+
+ src/Makefile.am | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+commit 896f2d3d3c05757337db482592a2d72d1e63b975
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sun Apr 19 07:06:55 2020 -0600
+
+    kadd libcanberra for playing sounds
+
+ configure.ac | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+commit 058c1d19fc4d2a6b8f1c6e3479ce318f858b25ef
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sun Apr 19 01:02:20 2020 -0600
+
+    use determined directories
+
+ src/xdg-play.c          | 292 ++++++++++++++++++++------------------------
+ src/xdg-sound-list.c    | 292 ++++++++++++++++++++------------------------
+ src/xdg-sound-whereis.c | 292 ++++++++++++++++++++------------------------
+ src/xdg-sound-which.c   | 292 ++++++++++++++++++++------------------------
+ 4 files changed, 536 insertions(+), 632 deletions(-)
+
+commit aef068cbf9aad4ed5227aa3880120039db14c751
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sun Apr 19 00:33:21 2020 -0600
+
+    determine directories better
+
+ src/xdg-play.c          | 133 ++++++++++++++++++++++++++++++++++++++++--
+ src/xdg-sound-list.c    | 137 ++++++++++++++++++++++++++++++++++++++++++--
+ src/xdg-sound-whereis.c | 137 ++++++++++++++++++++++++++++++++++++++++++--
+ src/xdg-sound-which.c   | 137 ++++++++++++++++++++++++++++++++++++++++++--
+ 4 files changed, 520 insertions(+), 24 deletions(-)
+
+commit d4f005369ba81c7a6567e5b43fb3bc09755d8e91
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sat Apr 18 23:25:44 2020 -0600
+
+    correct output, add new options
+
+ src/xdg-play.c          | 90 +++++++++++++++++++++++++++++----------------
+ src/xdg-sound-list.c    | 90 ++++++++++++++++++++++++++++-----------------
+ src/xdg-sound-whereis.c | 90 ++++++++++++++++++++++++++++-----------------
+ src/xdg-sound-which.c   | 90 ++++++++++++++++++++++++++++-----------------
+ 4 files changed, 226 insertions(+), 134 deletions(-)
+
+commit ededdcb0fe691b600dea417c9702e1a3b8a7028a
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sat Apr 18 06:26:50 2020 -0600
+
+    update release files
+
+ ChangeLog | 44 ++++++++++++++++++++++++++++++++++++++++++++
+ NEWS      |  6 +++++-
+ 2 files changed, 49 insertions(+), 1 deletion(-)
+
 commit 81f1b05716525b741fd81e138a28d36183a8bb88
 Author: Brian Bidulock <bidulock@openss7.org>
 Date:   Sat Apr 18 06:24:57 2020 -0600

@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([xdg-sound],[0.9.3],[https://github.com/bbidulock/xdg-sound],[xdg-sound],[https://github.com/bbidulock/xdg-sound/issues])
-AC_REVISION([0.9.3])
+AC_INIT([xdg-sound],[0.9],[https://github.com/bbidulock/xdg-sound],[xdg-sound],[https://github.com/bbidulock/xdg-sound/issues])
+AC_REVISION([0.9])
 
 # set better defaults
 AC_PREFIX_DEFAULT([/usr])
@@ -26,11 +26,11 @@ AC_SUBST([DATE])
 MDOCDATE='April 19, 2020'
 AC_SUBST([MDOCDATE])
 
-BRANCH='master'
+BRANCH='0.9'
 AC_SUBST([BRANCH])
 
 # Initialize Automake
-AM_INIT_AUTOMAKE([1.16 dist-lzip no-dist-gzip std-options -Wall color-tests silent-rules tar-pax])
+AM_INIT_AUTOMAKE([gnits 1.16 dist-lzip no-dist-gzip std-options -Wall color-tests silent-rules tar-pax])
 AM_MAINTAINER_MODE
 AM_SILENT_RULES([yes])
 
