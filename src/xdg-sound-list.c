@@ -183,6 +183,8 @@ typedef struct {
 	char *theme;
 	char *profile;
 	char *context;
+	char *user;
+	char *home;
 	char *datadirs;
 	char *datahome;
 } Options;
@@ -206,6 +208,8 @@ Options options = {
 	.theme = NULL,
 	.profile = NULL,
 	.context = NULL,
+	.user = NULL,
+	.home = NULL,
 	.datadirs = NULL,
 	.datahome = NULL,
 };
@@ -1438,7 +1442,7 @@ sort_sound_events(void)
 }
 
 static void
-list_sound_events(void)
+list_sound_events(const char *home)
 {
 	Event *event;
 
@@ -1468,11 +1472,11 @@ list_sound_events(void)
 				DPRINTF(1, "skipping '%s[%d]' which matches '%s[%d]'\n", event->key, context, s->eventid, s->context);
 				continue;
 			}
-			fprintf(stdout, "%s: %s\n", event->key, event->file);
+			output_path(home, event->key, event->file);
 		}
 	} else {
 		for (event = events; event; event = event->next)
-			fprintf(stdout, "%s: %s\n", event->key, event->file);
+			output_path(home, event->key, event->file);
 	}
 }
 
@@ -1717,7 +1721,8 @@ do_show(int argc, char *argv[])
 	}
 	free(tlist);
 	sort_sound_events();
-	list_sound_events();
+	options.headers = 1;
+	list_sound_events(home);
 }
 
 static void
@@ -2006,36 +2011,41 @@ main(int argc, char *argv[])
 		int option_index = 0;
 		/* *INDENT-OFF* */
 		static struct option long_options[] = {
-			{"show",	no_argument,		NULL,	's'},
-			{"noplay",	no_argument,		NULL,	'n'},
-			{"list",	no_argument,		NULL,	'l'},
+			{"play",		no_argument,		NULL,	'p'},
+			{"show",		no_argument,		NULL,	's'},
+			{"noplay",		no_argument,		NULL,	'n'},
+			{"list",		no_argument,		NULL,	'l'},
 
-			{"all",		no_argument,		NULL,	'a'},
-			{"skip-dot",	no_argument,		NULL,	'o'},
-			{"skip-tilde",	no_argument,		NULL,	't'},
-			{"show-dot",	no_argument,		NULL,	'O'},
-			{"show-tilde",	no_argument,		NULL,	'T'},
-			{"theme",	required_argument,	NULL,	'N'},
-			{"profile",	required_argument,	NULL,	'P'},
-			{"standard",	no_argument,		NULL,	'S'},
-			{"headers",	no_argument,		NULL,	'r'},
-			{"deref",	no_argument,		NULL,	'd'},
-			{"context",	required_argument,	NULL,	'c'},
+			{"all",			no_argument,		NULL,	'a'},
+			{"skip-dot",		no_argument,		NULL,	'o'},
+			{"skip-tilde",		no_argument,		NULL,	't'},
+			{"show-dot",		no_argument,		NULL,	'O'},
+			{"show-tilde",		no_argument,		NULL,	'T'},
+			{"theme",		required_argument,	NULL,	'N'},
+			{"profile",		required_argument,	NULL,	'P'},
+			{"standard",		no_argument,		NULL,	'S'},
+			{"headers",		no_argument,		NULL,	'r'},
+			{"deref",		no_argument,		NULL,	'd'},
+			{"context",		required_argument,	NULL,	'c'},
+			{"user",		required_argument,	NULL,	'u'},
+			{"home",		required_argument,	NULL,	'm'},
+			{"xdg-data-dirs",	required_argument,	NULL,	'i'},
+			{"xdg-data-home",	required_argument,	NULL,	'I'},
 
-			{"debug",	optional_argument,	NULL,	'D'},
-			{"verbose",	optional_argument,	NULL,	'v'},
-			{"help",	no_argument,		NULL,	'h'},
-			{"version",	no_argument,		NULL,	'V'},
-			{"copying",	no_argument,		NULL,	'C'},
-			{"?",		no_argument,		NULL,	'H'},
+			{"debug",		optional_argument,	NULL,	'D'},
+			{"verbose",		optional_argument,	NULL,	'v'},
+			{"help",		no_argument,		NULL,	'h'},
+			{"version",		no_argument,		NULL,	'V'},
+			{"copying",		no_argument,		NULL,	'C'},
+			{"?",			no_argument,		NULL,	'H'},
 			{ 0, }
 		};
 		/* *INDENT-ON* */
 
-		c = getopt_long_only(argc, argv, "snlaotOTN:P:Srdc:D::v::hVCH?", long_options,
+		c = getopt_long_only(argc, argv, "snlaotOTN:P:Srdc:u:m:i:I:D::v::hVCH?", long_options,
 				     &option_index);
 #else				/* _GNU_SOURCE */
-		c = getopt(argc, argv, "snlaotOTN:P:Srdc:DvhVCH?");
+		c = getopt(argc, argv, "snlaotOTN:P:Srdc:u:m:i:I:DvhVCH?");
 #endif				/* _GNU_SOURCE */
 		if (c == -1) {
 			if (options.debug)
@@ -2046,11 +2056,7 @@ main(int argc, char *argv[])
 		case 0:
 			goto bad_usage;
 		case 'p':	/* -p, --play */
-			if (options.command != CommandDefault)
-				goto bad_command;
-			if (command == CommandDefault)
-				command = CommandPlay;
-			options.command = CommandPlay;
+			options.play = 1;
 			break;
 		case 's':	/* -s, --show */
 			if (options.command != CommandDefault)
@@ -2119,7 +2125,23 @@ main(int argc, char *argv[])
 			break;
 		case 'c':	/* -c, --context CONTEXT */
 			free(options.context);
-			options.context = strdup(options.context);
+			options.context = strdup(optarg);
+			break;
+		case 'u':	/* -u, --user USER */
+			free(options.user);
+			options.user = strdup(optarg);
+			break;
+		case 'm':	/* -m, --home HOME */
+			free(options.home);
+			options.home = strdup(optarg);
+			break;
+		case 'i':	/* -i, --datadirs DATADIRS */
+			free(options.datadirs);
+			options.datadirs = strdup(optarg);
+			break;
+		case 'I':	/* -I, --datahome DATAHOME */
+			free(options.datahome);
+			options.datahome = strdup(optarg);
 			break;
 
 		case 'D':	/* -D, --debug [level] */
