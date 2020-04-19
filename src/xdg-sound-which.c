@@ -754,7 +754,7 @@ parse_file(char *path)
 /** @} */
 
 static int
-output_path(const char *home, const char *eventid, const char *path)
+output_path(const char *eventid, const char *path)
 {
 	char *p, *line, *cdir, *file;
 	struct stat st;
@@ -793,21 +793,21 @@ output_path(const char *home, const char *eventid, const char *path)
 
 	if (options.skipdot && *file == '.')
 		return 0;
-	if (options.skiptilde && (*file == '~' || ((p = strstr(file, home)) && p == file)))
+	if (options.skiptilde && (*file == '~' || ((p = strstr(file, options.home)) && p == file)))
 		return 0;
 	cdir = calloc(PATH_MAX + 1, sizeof(*cdir));
 	if (!getcwd(cdir, PATH_MAX))
 		strncpy(cdir, ".", PATH_MAX);
 	line = calloc(PATH_MAX + 1, sizeof(*line));
 	if (*file == '~' && !options.showtilde) {
-		strncpy(line, home, PATH_MAX);
+		strncpy(line, options.home, PATH_MAX);
 		strncat(line, file + 1, PATH_MAX);
 	} else if (*file == '.' && !options.showdot) {
 		strncpy(line, cdir, PATH_MAX);
 		strncat(line, file + 1, PATH_MAX);
-	} else if (options.showtilde && ((p = strstr(file, home)) && p == file)) {
+	} else if (options.showtilde && ((p = strstr(file, options.home)) && p == file)) {
 		strncpy(line, "~", PATH_MAX);
-		strncat(line, file + strlen(home), PATH_MAX);
+		strncat(line, file + strlen(options.home), PATH_MAX);
 	} else if (options.showdot && ((p = strstr(file, cdir)) && p == file)) {
 		strncpy(line, ".", PATH_MAX);
 		strncat(line, file + strlen(cdir), PATH_MAX);
@@ -835,27 +835,21 @@ output_path(const char *home, const char *eventid, const char *path)
 Entry *
 lookup_index(const char *theme)
 {
-	char *path = NULL, *home, *p;
+	char *path = NULL, *p;
 	struct stat st;
-	char *list, *dirs, *env;
+	char *list, *dirs;
 	Entry *e = NULL;
 
 	if (!theme)
 		return (e);
 
 	list = calloc(PATH_MAX + 1, sizeof(*list));
-	dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
-	if ((env = getenv("XDG_DATA_HOME")) && *env)
-		strncpy(list, env, PATH_MAX);
-	else {
-		strncpy(list, home, PATH_MAX);
-		strncat(list, "/.local/share", PATH_MAX);
-	}
+	strncpy(list, options.datahome, PATH_MAX);
 	if (options.skiptilde)
-		strncpy(list, dirs, PATH_MAX);
+		strncpy(list, options.datadirs, PATH_MAX);
 	else {
 		strncat(list, ":", PATH_MAX);
-		strncat(list, dirs, PATH_MAX);
+		strncat(list, options.datadirs, PATH_MAX);
 	}
 	for (dirs = list; !path && *dirs;) {
 		if (*dirs == '.' && options.skipdot)
@@ -1052,7 +1046,7 @@ static int
 lookup_file(const char *name)
 {
 	const gchar *const *locales, *const *locale;
-	char *path = NULL, *eventid, *home, *p, *tlist, *themes, *slist, *subdirs;
+	char *path = NULL, *eventid, *p, *tlist, *themes, *slist, *subdirs;
 	const char *theme, *profile, *context, *subdir;
 	struct stat st;
 	int found_one = 0;
@@ -1061,7 +1055,6 @@ lookup_file(const char *name)
 	locales = g_get_language_names();
 	tlist = lookup_themes();
 	DPRINTF(1, "theme list is '%s'\n", tlist);
-	home = getenv("HOME") ? : ".";
 	eventid = calloc(PATH_MAX + 1, sizeof(*eventid));
 	strncpy(eventid, name, PATH_MAX);
 	if ((*eventid != '/') && (*eventid != '.')) {
@@ -1115,7 +1108,7 @@ lookup_file(const char *name)
 						strncpy(eventid, name, PATH_MAX);
 						for (;;) {
 							for (locale = locales;; locale++) {
-								char *list, *dirs, *env;
+								char *list, *dirs;
 
 								if (!theme && *locale) {
 									DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
@@ -1134,18 +1127,12 @@ lookup_file(const char *name)
 									*p = '\0';
 
 								list = calloc(PATH_MAX + 1, sizeof(*list));
-								dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
-								if ((env = getenv("XDG_DATA_HOME")) && *env)
-									strncpy(list, env, PATH_MAX);
-								else {
-									strncpy(list, home, PATH_MAX);
-									strncat(list, "/.local/share", PATH_MAX);
-								}
+								strncpy(list, options.datahome, PATH_MAX);
 								if (options.skiptilde) {
-									strncpy(list, dirs, PATH_MAX);
+									strncpy(list, options.datadirs, PATH_MAX);
 								} else {
 									strncat(list, ":", PATH_MAX);
-									strncat(list, dirs, PATH_MAX);
+									strncat(list, options.datadirs, PATH_MAX);
 								}
 								for (dirs = list; !path && *dirs;) {
 									if (*dirs == '.' && options.skipdot)
@@ -1176,7 +1163,7 @@ lookup_file(const char *name)
 									p = path + strlen(path);
 									strcpy(p, ".disabled");
 									DPRINTF(1, "checking '%s'\n", path);
-									if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
+									if (!stat(path, &st) && (found_one |= output_path(name, path)) && !options.all) {
 										free(list);
 										free(eventid);
 										free(path);
@@ -1185,7 +1172,7 @@ lookup_file(const char *name)
 									}
 									strcpy(p, ".oga");
 									DPRINTF(1, "checking '%s'\n", path);
-									if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
+									if (!stat(path, &st) && (found_one |= output_path(name, path)) && !options.all) {
 										free(list);
 										free(eventid);
 										free(path);
@@ -1194,7 +1181,7 @@ lookup_file(const char *name)
 									}
 									strcpy(p, ".ogg");
 									DPRINTF(1, "checking '%s'\n", path);
-									if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
+									if (!stat(path, &st) && (found_one |= output_path(name, path)) && !options.all) {
 										free(list);
 										free(eventid);
 										free(path);
@@ -1203,7 +1190,7 @@ lookup_file(const char *name)
 									}
 									strcpy(p, ".wav");
 									DPRINTF(1, "checking '%s'\n", path);
-									if (!stat(path, &st) && (found_one |= output_path(home, name, path)) && !options.all) {
+									if (!stat(path, &st) && (found_one |= output_path(name, path)) && !options.all) {
 										free(list);
 										free(eventid);
 										free(path);
@@ -1237,7 +1224,7 @@ lookup_file(const char *name)
 		path = strdup(eventid);
 		DPRINTF(1, "checking '%s'\n", path);
 		if (!stat(path, &st)) {
-			found_one |= output_path(home, NULL, path);
+			found_one |= output_path(NULL, path);
 		}
 		free(path);
 		free(tlist);
@@ -1251,13 +1238,12 @@ static void
 list_paths(void)
 {
 	const gchar *const *locales, *const *locale;
-	char *home, *p, *tlist, *themes, *slist, *subdirs;
+	char *p, *tlist, *themes, *slist, *subdirs;
 	const char *theme, *profile, *context, *subdir;
 
 	locales = g_get_language_names();
 	tlist = lookup_themes();
 	DPRINTF(1, "theme list is '%s'\n", tlist);
-	home = getenv("HOME") ? : ".";
 
 	for (themes = tlist;;) {
 		if (!*themes) {
@@ -1309,25 +1295,19 @@ list_paths(void)
 						DPRINTF(1, "searching without a subdir\n");
 
 					for (locale = locales;; locale++) {
-						char *list, *dirs, *env;
+						char *list, *dirs;
 
 						if (!theme && *locale) {
 							DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
 							continue;
 						}
 						list = calloc(PATH_MAX + 1, sizeof(*list));
-						dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
-						if ((env = getenv("XDG_DATA_HOME")) && *env)
-							strncpy(list, env, PATH_MAX);
-						else {
-							strncpy(list, home, PATH_MAX);
-							strncat(list, "/.local/share", PATH_MAX);
-						}
+						strncpy(list, options.datahome, PATH_MAX);
 						if (options.skiptilde) {
-							strncpy(list, dirs, PATH_MAX);
+							strncpy(list, options.datadirs, PATH_MAX);
 						} else {
 							strncat(list, ":", PATH_MAX);
-							strncat(list, dirs, PATH_MAX);
+							strncat(list, options.datadirs, PATH_MAX);
 						}
 						for (dirs = list; dirs && *dirs;) {
 							char *p, *path;
@@ -1359,7 +1339,7 @@ list_paths(void)
 							}
 							DPRINTF(1, "checking '%s'\n", path);
 							if (!stat(path, &st))
-								output_path(home, NULL, path);
+								output_path(NULL, path);
 							free(path);
 						}
 						free(list);
@@ -1443,7 +1423,7 @@ sort_sound_events(void)
 }
 
 static void
-list_sound_events(const char *home)
+list_sound_events(void)
 {
 	Event *event;
 
@@ -1473,11 +1453,11 @@ list_sound_events(const char *home)
 				DPRINTF(1, "skipping '%s[%d]' which matches '%s[%d]'\n", event->key, context, s->eventid, s->context);
 				continue;
 			}
-			output_path(home, event->key, event->file);
+			output_path(event->key, event->file);
 		}
 	} else {
 		for (event = events; event; event = event->next)
-			output_path(home, event->key, event->file);
+			output_path(event->key, event->file);
 	}
 }
 
@@ -1596,7 +1576,7 @@ static void
 do_show(int argc, char *argv[])
 {
 	const gchar *const *locales, *const *locale;
-	char *home, *p, *tlist, *themes, *slist, *subdirs;
+	char *p, *tlist, *themes, *slist, *subdirs;
 	const char *theme, *profile, *context, *subdir;
 
 	(void) argc;
@@ -1605,7 +1585,6 @@ do_show(int argc, char *argv[])
 	locales = g_get_language_names();
 	tlist = lookup_themes();
 	DPRINTF(1, "theme list is '%s'\n", tlist);
-	home = getenv("HOME") ? : ".";
 
 	for (themes = tlist;;) {
 		if (!*themes) {
@@ -1656,26 +1635,19 @@ do_show(int argc, char *argv[])
 						DPRINTF(1, "searching without a subdir\n");
 
 					for (locale = locales;; locale++) {
-						char *list, *dirs, *env;
+						char *list, *dirs;
 
 						if (!theme && *locale) {
 							DPRINTF(1, "skipping locale '%s' for null theme\n", *locale);
 							continue;
 						}
 						list = calloc(PATH_MAX + 1, sizeof(*list));
-
-						dirs = getenv("XDG_DATA_DIRS") ? : "/usr/local/share:/usr/share";
-						if ((env = getenv("XDG_DATA_HOME")) && *env) {
-							strncpy(list, env, PATH_MAX);
-						} else {
-							strncpy(list, home, PATH_MAX);
-							strncat(list, "/.local/share", PATH_MAX);
-						}
+						strncpy(list, options.datahome, PATH_MAX);
 						if (options.skiptilde) {
-							strncpy(list, dirs, PATH_MAX);
+							strncpy(list, options.datadirs, PATH_MAX);
 						} else {
 							strncat(list, ":", PATH_MAX);
-							strncat(list, dirs, PATH_MAX);
+							strncat(list, options.datadirs, PATH_MAX);
 						}
 						for (dirs = list; dirs && *dirs;) {
 							char *p, *path;
@@ -1723,7 +1695,7 @@ do_show(int argc, char *argv[])
 	free(tlist);
 	sort_sound_events();
 	options.headers = 1;
-	list_sound_events(home);
+	list_sound_events();
 }
 
 static void
@@ -1748,103 +1720,10 @@ do_which(int argc, char *argv[])
   * @{ */
 
 static void
-set_default_profile(void)
-{
-	free(options.profile);
-	options.profile = strdup("stereo");
-}
-
-static void
-set_default_theme(void)
-{
-	char *files, *end, *file;
-	Entry *entry;
-	int n;
-
-	files = calloc(PATH_MAX, sizeof(*files));
-	strcpy(files, getenv("GTK2_RC_FILES") ? : "/usr/share/gtk-2.0/gtkrc");
-	if (*files)
-		strcat(files, ":");
-	strcat(files, getenv("HOME"));
-	strcat(files, "/.gtkrc-2.0");
-	strcat(files, ":");
-	strcat(files, getenv("HOME"));
-	strcat(files, "/.gtkrc-2.0.xde");
-
-	end = files + strlen(files);
-	for (n = 0, file = files; file < end; n++,
-	     *strchrnul(file, ':') = '\0', file += strlen(file) + 1) ;
-
-	for (n = 0, file = files; file < end; n++, file += strlen(file) + 1) {
-		struct stat st;
-		FILE *f;
-		char *buf, *b, *e;
-
-		if (stat(file, &st)) {
-			DPRINTF(1, "%s: %s\n", file, strerror(errno));
-			continue;
-		}
-		if (!S_ISREG(st.st_mode)) {
-			DPRINTF(1, "%s: not a file\n", file);
-			continue;
-		}
-		if (!(f = fopen(file, "r"))) {
-			DPRINTF(1, "%s: %s\n", file, strerror(errno));
-			continue;
-		}
-		DPRINTF(1, "got file %s\n", file);
-		buf = calloc(PATH_MAX + 1, sizeof(*buf));
-		while (fgets(buf, PATH_MAX, f)) {
-			b = buf;
-			b += strspn(b, " \t");
-			if (*b == '#' || *b == '\n')
-				continue;
-			if (strncmp(b, "gtk-sound-theme-name", 20))
-				continue;
-			b += 20;
-			b += strspn(b, " \t");
-			if (*b != '=')
-				continue;
-			b += 1;
-			b += strspn(b, " \t");
-			if (*b != '"')
-				continue;
-			b += 1;
-			e = b;
-			while ((e = strchr(e, '"'))) {
-				if (*(e - 1) != '\\')
-					break;
-				memmove(e - 1, e, strlen(e) + 1);
-			}
-			if (!e || b >= e)
-				continue;
-			*e = '\0';
-			memmove(buf, b, strlen(b) + 1);
-			if ((entry = lookup_index(buf))) {
-				OPRINTF(1, "found theme from %s %s\n", file, buf);
-				free(options.theme);
-				options.theme = strdup(buf);
-				free_entry(entry);
-			}
-		}
-		fclose(f);
-		free(buf);
-	}
-	free(files);
-	if (!options.theme)
-		DPRINTF(1, "could not find theme\n");
-	else
-		DPRINTF(1, "found theme %s\n", options.theme);
-	return;
-}
-
-static void
 set_defaults(int argc, char *argv[])
 {
 	(void) argc;
 	(void) argv;
-	set_default_theme();
-	set_default_profile();
 }
 
 static void
@@ -1954,12 +1833,109 @@ get_default_dirs(void)
 }
 
 static void
+get_default_profile(void)
+{
+	if (options.profile)
+		return;
+	free(options.profile);
+	options.profile = strdup("stereo");
+}
+
+static void
+get_default_theme(void)
+{
+	char *files, *end, *file;
+	Entry *entry;
+	int n;
+
+	if (options.theme)
+		return;
+	files = calloc(PATH_MAX, sizeof(*files));
+	strcpy(files, getenv("GTK2_RC_FILES") ? : "/usr/share/gtk-2.0/gtkrc");
+	if (*files)
+		strcat(files, ":");
+	strcat(files, getenv("HOME"));
+	strcat(files, "/.gtkrc-2.0");
+	strcat(files, ":");
+	strcat(files, getenv("HOME"));
+	strcat(files, "/.gtkrc-2.0.xde");
+
+	end = files + strlen(files);
+	for (n = 0, file = files; file < end; n++,
+	     *strchrnul(file, ':') = '\0', file += strlen(file) + 1) ;
+
+	for (n = 0, file = files; file < end; n++, file += strlen(file) + 1) {
+		struct stat st;
+		FILE *f;
+		char *buf, *b, *e;
+
+		if (stat(file, &st)) {
+			DPRINTF(1, "%s: %s\n", file, strerror(errno));
+			continue;
+		}
+		if (!S_ISREG(st.st_mode)) {
+			DPRINTF(1, "%s: not a file\n", file);
+			continue;
+		}
+		if (!(f = fopen(file, "r"))) {
+			DPRINTF(1, "%s: %s\n", file, strerror(errno));
+			continue;
+		}
+		DPRINTF(1, "got file %s\n", file);
+		buf = calloc(PATH_MAX + 1, sizeof(*buf));
+		while (fgets(buf, PATH_MAX, f)) {
+			b = buf;
+			b += strspn(b, " \t");
+			if (*b == '#' || *b == '\n')
+				continue;
+			if (strncmp(b, "gtk-sound-theme-name", 20))
+				continue;
+			b += 20;
+			b += strspn(b, " \t");
+			if (*b != '=')
+				continue;
+			b += 1;
+			b += strspn(b, " \t");
+			if (*b != '"')
+				continue;
+			b += 1;
+			e = b;
+			while ((e = strchr(e, '"'))) {
+				if (*(e - 1) != '\\')
+					break;
+				memmove(e - 1, e, strlen(e) + 1);
+			}
+			if (!e || b >= e)
+				continue;
+			*e = '\0';
+			memmove(buf, b, strlen(b) + 1);
+			if ((entry = lookup_index(buf))) {
+				OPRINTF(1, "found theme from %s %s\n", file, buf);
+				free(options.theme);
+				options.theme = strdup(buf);
+				free_entry(entry);
+			}
+		}
+		fclose(f);
+		free(buf);
+	}
+	free(files);
+	if (!options.theme)
+		DPRINTF(1, "could not find theme\n");
+	else
+		DPRINTF(1, "found theme %s\n", options.theme);
+	return;
+}
+
+static void
 get_defaults(int argc, char *argv[])
 {
 	(void) argc;
 	(void) argv;
 
 	get_default_dirs();
+	get_default_profile();
+	get_default_theme();
 }
 
 static void
@@ -2096,8 +2072,6 @@ General Options:\n\
         use sound profile named PROFILE\n\
     --deref, -d                   [default: %6$s]\n\
         dereference symbolic links\n\
-    --debug, -D [LEVEL]           [default: %4$d]\n\
-        increment or set debug LEVEL\n\
     --user, -u USER               [default: %7$s]\n\
         pretend to be specified USER\n\
     --home, -m HOME               [default: %8$s]\n\
@@ -2106,6 +2080,8 @@ General Options:\n\
         use DATADIRS for XDG_DATA_DIRS\n\
     --xdg-data-home, -I DATAHOME  [default: %10$s]\n\
         use DATAHOME for XDG_DATA_HOME\n\
+    --debug, -D [LEVEL]           [default: %4$d]\n\
+        increment or set debug LEVEL\n\
     --verbose, -v [LEVEL]         [default: %5$d]\n\
         increment or set output verbosity LEVEL\n\
         this option may be repeated\n\
