@@ -167,6 +167,8 @@ typedef enum {
 	CommandCopying,
 } Command;
 
+Command default_command = CommandWhereis;
+
 typedef struct {
 	int debug;
 	int output;
@@ -824,12 +826,21 @@ static void
 play_path(const char *eventid, const char *path)
 {
 	ca_proplist *p = NULL;
+	static const char *disabled = ".disabled", *sound = ".sound";
 	const char *env;
+	size_t len;
 	int r;
 
 	if (!options.play || options.noplay)
 		return;
 	if (!ca || efd == -1)
+		return;
+	if (!eventid)
+		return;
+	len = strlen(path);
+	if (strstr(path, disabled) == path + len - strlen(disabled))
+		return;
+	if (strstr(path, sound) == path + len - strlen(sound))
 		return;
 	if ((r = ca_proplist_create(&p)) < 0) {
 		EPRINTF("Failed to create property list: %s\n", ca_strerror(r));
@@ -840,7 +851,7 @@ play_path(const char *eventid, const char *path)
 		ca_proplist_destroy(p);
 		return;
 	}
-	if (eventid && (r = ca_proplist_sets(p, CA_PROP_MEDIA_NAME, eventid)) < 0) {
+	if ((r = ca_proplist_sets(p, CA_PROP_MEDIA_NAME, eventid)) < 0) {
 		EPRINTF("Failed to set media name: %s\n", ca_strerror(r));
 		ca_proplist_destroy(p);
 		return;
@@ -1079,6 +1090,71 @@ lookup_themes(void)
 	return (themes);
 }
 
+static char *
+lookup_all_themes(void)
+{
+	char *themes, *list, *dirs;
+
+	themes = calloc(PATH_MAX + 1, sizeof(*themes));
+	list = calloc(PATH_MAX + 1, sizeof(*list));
+	strncpy(list, options.datahome, PATH_MAX);
+	if (options.skiptilde) {
+		strncpy(list, options.datadirs, PATH_MAX);
+	} else {
+		strncat(list, ":", PATH_MAX);
+		strncat(list, options.datadirs, PATH_MAX);
+	}
+	for (dirs = list; dirs && *dirs;) {
+		struct dirent *d;
+		char *path, *p;
+		DIR *dir;
+
+		for (dirs = list; dirs && *dirs;) {
+			if (*dirs == '.' && options.skipdot)
+				continue;
+			if (*dirs == '~' && options.skiptilde)
+				continue;
+			if ((p = strchr(dirs, ':'))) {
+				*p = '\0';
+				path = strdup(dirs);
+				dirs = p + 1;
+			} else {
+				path = strdup(dirs);
+				dirs += strlen(dirs);
+			}
+			path = realloc(path, PATH_MAX + 1);
+			strncat(path, "/sounds", PATH_MAX);
+			if (!(dir = opendir(path))) {
+				DPRINTF(1, "%s: %s\n", path, strerror(errno));
+				free(path);
+				continue;
+			}
+			while ((d = readdir(dir))) {
+				struct stat st;
+				char *file;
+
+				if (d->d_name[0] == '.')
+					continue;
+				file = calloc(PATH_MAX + 1, sizeof(*file));
+				strncpy(file, path, PATH_MAX);
+				strncat(file, "/", PATH_MAX);
+				strncat(file, d->d_name, PATH_MAX);
+				if (!stat(file, &st) && S_ISDIR(st.st_mode)) {
+					strncat(file, "/index.theme", PATH_MAX);
+					if (!stat(file, &st) && S_ISREG(st.st_mode)) {
+						if (*themes)
+							strncat(themes, ";", PATH_MAX);
+						strncat(themes, d->d_name, PATH_MAX);
+					}
+				}
+				free(file);
+			}
+		}
+	}
+	free(list);
+	return (themes);
+}
+
 static void
 lookup_subdir(char *subdirs, const char *theme, const char *profile, const char *context)
 {
@@ -1158,7 +1234,7 @@ lookup_subdirs(const char *theme, const char *profile, const char *context)
   * itself.
   */
 static int
-lookup_file(const char *name)
+lookup_file(const char *name, const char *theme_list)
 {
 	const gchar *const *locales, *const *locale;
 	char *path = NULL, *eventid, *p, *tlist, *themes, *slist, *subdirs;
@@ -1168,7 +1244,7 @@ lookup_file(const char *name)
 
 	DPRINTF(2, "looking up %s\n", name);
 	locales = g_get_language_names();
-	tlist = lookup_themes();
+	tlist = strdup(theme_list);
 	DPRINTF(1, "theme list is '%s'\n", tlist);
 	eventid = calloc(PATH_MAX + 1, sizeof(*eventid));
 	strncpy(eventid, name, PATH_MAX);
@@ -1312,6 +1388,15 @@ lookup_file(const char *name)
 										free(tlist);
 										return (found_one);
 									}
+									strcpy(p, ".sound");
+									DPRINTF(1, "checking '%s'\n", path);
+									if (!stat(path, &st) && (found_one |= output_path(name, path)) && !options.all) {
+										free(list);
+										free(eventid);
+										free(path);
+										free(tlist);
+										return (found_one);
+									}
 									free(path);
 									path = NULL;
 								}
@@ -1339,7 +1424,7 @@ lookup_file(const char *name)
 		path = strdup(eventid);
 		DPRINTF(1, "checking '%s'\n", path);
 		if (!stat(path, &st)) {
-			found_one |= output_path(NULL, path);
+			found_one |= output_path("file", path);
 		}
 		free(path);
 		free(tlist);
@@ -1348,16 +1433,14 @@ lookup_file(const char *name)
 	return (found_one);
 }
 
-
 static void
-list_paths(void)
+list_themes(char *tlist)
 {
 	const gchar *const *locales, *const *locale;
-	char *p, *tlist, *themes, *slist, *subdirs;
+	char *p, *themes, *slist, *subdirs;
 	const char *theme, *profile, *context, *subdir;
 
 	locales = g_get_language_names();
-	tlist = lookup_themes();
 	DPRINTF(1, "theme list is '%s'\n", tlist);
 
 	for (themes = tlist;;) {
@@ -1472,6 +1555,34 @@ list_paths(void)
 	}
 	free(tlist);
 	return;
+}
+
+static void
+list_themedirs(void)
+{
+	char *tlist;
+
+	tlist = lookup_all_themes();
+	list_themes(tlist);
+}
+
+static void
+do_listall(int argc, char *argv[])
+{
+	(void) argc;
+	(void) argv;
+	init_play();
+	list_themedirs();
+}
+
+
+static void
+list_paths(void)
+{
+	char *tlist;
+
+	tlist = lookup_themes();
+	list_themes(tlist);
 }
 
 static void
@@ -1663,6 +1774,7 @@ do_listem(int argc, char *argv[])
 {
 	const struct Sound *sound;
 	int context = -1;
+	char *theme_list;
 
 	(void) argc;
 	(void) argv;
@@ -1679,15 +1791,17 @@ do_listem(int argc, char *argv[])
 			}
 		}
 	}
+	theme_list = lookup_themes(); /* XXX */
 	options.headers = 1;
 	for (sound = StandardSounds; sound && sound->eventid; sound++) {
 		if (context != -1 && sound->context != context)
 			continue;
 		if (!options.headers)
 			fprintf(stdout, "%s: \n", sound->eventid);
-		if (!lookup_file(sound->eventid) && options.headers)
+		if (!lookup_file(sound->eventid, theme_list) && options.headers)
 			fprintf(stdout, "%s: \n", sound->eventid);
 	}
+	free(theme_list);
 }
 
 static void
@@ -1820,21 +1934,30 @@ do_show(int argc, char *argv[])
 static void
 do_whereis(int argc, char *argv[])
 {
+	char **eventid, *theme_list;
+
 	(void) argc;
 	(void) argv;
 	init_play();
+	theme_list = lookup_all_themes();
+	options.all = 1;
+	for (eventid = options.eventids; eventid && *eventid; eventid++)
+		lookup_file(*eventid, theme_list);
+	free(theme_list);
 }
 
 static void
 do_which(int argc, char *argv[])
 {
-	char **eventid;
+	char **eventid, *theme_list;
 
 	(void) argc;
 	(void) argv;
 	init_play();
+	theme_list = lookup_themes();
 	for (eventid = options.eventids; eventid && *eventid; eventid++)
-		lookup_file(*eventid);
+		lookup_file(*eventid, theme_list);
+	free(theme_list);
 }
 
 /** @section Main
@@ -2443,7 +2566,7 @@ main(int argc, char *argv[])
 	}
 	if (command != CommandHelp)
 		if (command == CommandDefault)
-			options.command = CommandWhereis;
+			options.command = default_command;
 	switch (options.command) {
 	case CommandPlay:
 	case CommandWhereis:
@@ -2499,8 +2622,13 @@ main(int argc, char *argv[])
 		do_which(argc, argv);
 		break;
 	case CommandList:
-		DPRINTF(1, "%s: running list\n", argv[0]);
-		do_list(argc, argv);
+		if (default_command == CommandWhereis) {
+			DPRINTF(1, "%s: running listall\n", argv[0]);
+			do_listall(argc, argv);
+		} else {
+			DPRINTF(1, "%s: running list\n", argv[0]);
+			do_list(argc, argv);
+		}
 		break;
 	case CommandHelp:
 		DPRINTF(1, "%s: printing help message\n", argv[0]);
