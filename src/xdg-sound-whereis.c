@@ -1597,9 +1597,17 @@ do_list(int argc, char *argv[])
 static void
 do_play(int argc, char *argv[])
 {
+	char **eventid, *theme_list;
+
 	(void) argc;
 	(void) argv;
+	options.play = 1;
+	options.headers = 1;
 	init_play();
+	theme_list = lookup_themes();
+	for (eventid = options.eventids; eventid && *eventid; eventid++)
+		lookup_file(*eventid, theme_list);
+	free(theme_list);
 }
 
 static void
