@@ -182,6 +182,8 @@ typedef struct {
 	int showdot;
 	int showtilde;
 	int standard;
+	int extensions;
+	int missing;
 	int headers;
 	int dereflinks;
 	char **eventids;
@@ -207,6 +209,8 @@ Options options = {
 	.showdot = 0,
 	.showtilde = 0,
 	.standard = 0,
+	.extensions = 0,
+	.missing = 0,
 	.headers = 0,
 	.dereflinks = 0,
 	.eventids = NULL,
@@ -270,269 +274,174 @@ static const struct Sound {
 	const char *data;
 } StandardSounds[] = {
 	/* Standard Alert Sounds */
-	{ "network-connectivity-lost",		0, NULL },
-	{ "network-connectivity-error",		0, NULL },
-	{ "dialog-error",			0, NULL },
-	{ "battery-low",			0, NULL },
-	{ "suspend-error",			0, NULL },
-	{ "software-update-urgent",		0, NULL },
-	{ "power-unplug-battery-low",		0, NULL },
+	{ "network-connectivity-lost",		0, "Network Connectivity Lost"		 },
+	{ "network-connectivity-error",		0, "Network Connectivity Error"		 },
+	{ "dialog-error",			0, "Dialog Error"			 },
+	{ "battery-low",			0, "Battery Low"			 },
+	{ "suspend-error",			0, "Suspend Error"			 },
+	{ "software-update-urgent",		0, "Urgent Software Update"		 },
+	{ "power-unplug-battery-low",		0, "Power Cord Unplugged Battery Low"	 },
 	/* Standard Notifications Sounds */
-	{ "message-new-instant",		1, NULL },
-	{ "message-new-email",			1, NULL },
-	{ "complete-media-burn",		1, NULL },
-	{ "complete-media-rip",			1, NULL },
-	{ "complete-download",			1, NULL },
-	{ "complete-copy",			1, NULL },
-	{ "complete-scan",			1, NULL },
-	{ "phone-incoming-call",		1, NULL },
-	{ "phone-outgoing-busy",		1, NULL },
-	{ "phone-hangup",			1, NULL },
-	{ "phone-failure",			1, NULL },
-	{ "network-connectivity-established",	1, NULL },
-	{ "system-bootup",			1, NULL },
-	{ "system-ready",			1, NULL },
-	{ "system-shutdown",			1, NULL },
-	{ "search-results",			1, NULL },
-	{ "search-results-empty",		1, NULL },
-	{ "desktop-login",			1, NULL },
-	{ "desktop-logout",			1, NULL },
-	{ "desktop-screen-lock",		1, NULL },
-	{ "desktop-screen-unlock",		1, NULL },
-	{ "service-login",			1, NULL },
-	{ "service-logout",			1, NULL },
-	{ "battery-caution",			1, NULL },
-	{ "battery-full",			1, NULL },
-	{ "dialog-warning",			1, NULL },
-	{ "dialog-information",			1, NULL },
-	{ "dialog-question",			1, NULL },
-	{ "software-update-available",		1, NULL },
-	{ "device-added",			1, NULL },
-	{ "device-removed",			1, NULL },
-	{ "window-new",				1, NULL },
-	{ "power-plug",				1, NULL },
-	{ "power-unplug",			1, NULL },
-	{ "suspend-start",			1, NULL },
-	{ "suspend-resume",			1, NULL },
-	{ "lid-open",				1, NULL },
-	{ "lid-close",				1, NULL },
-	{ "alarm-clock-elapsed",		1, NULL },
-	{ "window-attention-active",		1, NULL },
-	{ "window-attention-inactive",		1, NULL },
+	{ "message-new-instant",		1, "New Instant Message"		 },
+	{ "message-new-email",			1, "New Email Message"			 },
+	{ "complete-media-burn",		1, "Media Burn Complete"		 },
+	{ "complete-media-rip",			1, "Media Rip Complete"			 },
+	{ "complete-download",			1, "Download Complete"			 },
+	{ "complete-copy",			1, "Copy Complete"			 },
+	{ "complete-scan",			1, "Scan Complete"			 },
+	{ "phone-incoming-call",		1, "Incoming Phone Call"		 },
+	{ "phone-outgoing-busy",		1, "Outgoing Phone Call Busy"		 },
+	{ "phone-hangup",			1, "Phone Hangup"			 },
+	{ "phone-failure",			1, "Phone Call Failure"			 },
+	{ "network-connectivity-established",	1, "Network Connectivity Established"	 },
+	{ "system-bootup",			1, "System Bootup"			 },
+	{ "system-ready",			1, "System Ready"			 },
+	{ "system-shutdown",			1, "System Shutdown"			 },
+	{ "system-shutdown-reboot",		1, "System Shutdown Reboot"		 }, /* XXX -extension */
+	{ "search-results",			1, "Search Results"			 },
+	{ "search-results-empty",		1, "Search Results Empty"		 },
+	{ "desktop-login",			1, "Desktop Login"			 },
+	{ "desktop-logout",			1, "Desktop Logout"			 },
+	{ "desktop-screen-lock",		1, "Desktop Screen Lock"		 },
+	{ "desktop-screen-unlock",		1, "Desktop Screen Unlock"		 },
+	{ "service-login",			1, "Service Login"			 },
+	{ "service-logout",			1, "Service Logout"			 },
+	{ "battery-caution",			1, "Battery Caution"			 },
+	{ "battery-full",			1, "Battery Full"			 },
+	{ "dialog-warning",			1, "Warning Dialog"			 },
+	{ "dialog-information",			1, "Information Dialog"			 },
+	{ "dialog-question",			1, "Question Dialog"			 },
+	{ "software-update-available",		1, "Available Software Update"		 },
+	{ "device-added",			1, "Device Added"			 },
+	{ "device-removed",			1, "Device Removed"			 },
+	{ "window-new",				1, "New Window"				 },
+	{ "power-plug",				1, "Power Cord Plugged"			 },
+	{ "power-unplug",			1, "Power Cord Unplugged"		 },
+	{ "suspend-start",			1, "Suspend Start"			 },
+	{ "suspend-resume",			1, "Suspend Resume"			 },
+	{ "lid-open",				1, "Lid Open"				 },
+	{ "lid-close",				1, "Lid Close"				 },
+	{ "alarm-clock-elapsed",		1, "Alarm Clock Elapsed"		 },
+	{ "window-attention-active",		1, "Attention Active Window"		 },
+	{ "window-attention-inactive",		1, "Attention Inactive Window"		 },
+	{ "window-urgent",			1, "Urgent Window"			 }, /* XXX - extension */
 	/* Standard Action Sounds */
-	{ "phone-outgoing-calling",		2, NULL },
-	{ "message-sent-instant",		2, NULL },
-	{ "message-sent-email",			2, NULL },
-	{ "bell-terminal",			2, NULL },
-	{ "bell-window-system",			2, NULL },
-	{ "trash-empty",			2, NULL },
-	{ "item-deleted",			2, NULL },
-	{ "file-trash",				2, NULL },
-	{ "camera-shutter",			2, NULL },
-	{ "camera-focus",			2, NULL },
-	{ "screen-capture",			2, NULL },
-	{ "count-down",				2, NULL },
-	{ "completion-success",			2, NULL },
-	{ "completion-fail",			2, NULL },
-	{ "completion-partial",			2, NULL },
-	{ "completion-rotation",		2, NULL },
-	{ "audio-volume-change",		2, NULL },
-	{ "audio-channel-left",			2, NULL },
-	{ "audio-channel-right",		2, NULL },
-	{ "audio-channel-front-left",		2, NULL },
-	{ "audio-channel-front-right",		2, NULL },
-	{ "audio-channel-front-center",		2, NULL },
-	{ "audio-channel-rear-left",		2, NULL },
-	{ "audio-channel-rear-right",		2, NULL },
-	{ "audio-channel-rear-center",		2, NULL },
-	{ "audio-channel-lfe",			2, NULL },
-	{ "audio-channel-side-left",		2, NULL },
-	{ "audio-channel-side-right",		2, NULL },
-	{ "audio-test-signal",			2, NULL },
+	{ "phone-outgoing-calling",		2, "Outgoing Phone Call Calling"	 },
+	{ "message-sent-instant",		2, "Instant Message Sent"		 },
+	{ "message-sent-email",			2, "Email Message Sent"			 },
+	{ "bell-terminal",			2, "Terminal Bell"			 },
+	{ "bell-window-system",			2, "Window System Bell"			 },
+	{ "trash-empty",			2, "Trash Empty"			 },
+	{ "item-deleted",			2, "Item Deleted"			 },
+	{ "file-trash",				2, "File Trashed"			 },
+	{ "camera-shutter",			2, "Camera Shutter"			 },
+	{ "camera-focus",			2, "Camera Focus"			 },
+	{ "screen-capture",			2, "Screen Capture"			 },
+	{ "count-down",				2, "Count Down"				 },
+	{ "completion-success",			2, "Completion (Success)"		 },
+	{ "completion-fail",			2, "Completion (Fail)"			 },
+	{ "completion-partial",			2, "Completion (Partial)"		 },
+	{ "completion-rotation",		2, "Rotation Completion"		 },
+	{ "audio-volume-change",		2, "Audio Volume Change"		 },
+	{ "audio-channel-left",			2, "Audio Channel Left"			 },
+	{ "audio-channel-right",		2, "Audio Channel Right"		 },
+	{ "audio-channel-front-left",		2, "Audio Channel Front Left"		 },
+	{ "audio-channel-front-right",		2, "Audio Channel Front Right"		 },
+	{ "audio-channel-front-center",		2, "Audio Channel Front Center"		 },
+	{ "audio-channel-rear-left",		2, "Audio Channel Rear Left"		 },
+	{ "audio-channel-rear-right",		2, "Audio Channel Rear Right"		 },
+	{ "audio-channel-rear-center",		2, "Audio Channel Rear Center"		 },
+	{ "audio-channel-lfe",			2, "Audio Channel LFE"			 },
+	{ "audio-channel-side-left",		2, "Audio Channel Side Left"		 },
+	{ "audio-channel-side-right",		2, "Audio Channel Side Right"		 },
+	{ "audio-test-signal",			2, "Audio Test Signal"			 },
 	/* Standard Input Feedback Sounds */
-	{ "window-close",			3, NULL },
-	{ "window-slide-in",			3, NULL },
-	{ "window-slide-out",			3, NULL },
-	{ "window-minimized",			3, NULL },
-	{ "window-unminimized",			3, NULL },
-	{ "window-maximized",			3, NULL },
-	{ "window-unmaximized",			3, NULL },
-	{ "window-inactive-click",		3, NULL },
-	{ "window-move-start",			3, NULL },
-	{ "window-move-end",			3, NULL },
-	{ "window-resize-start",		3, NULL },
-	{ "window-resize-end",			3, NULL },
-	{ "desktop-switch-left",		3, NULL },
-	{ "desktop-switch-right",		3, NULL },
-	{ "window-switch",			3, NULL },
-	{ "notebook-tab-changed",		3, NULL },
-	{ "scroll-up",				3, NULL },
-	{ "scroll-down",			3, NULL },
-	{ "scroll-left",			3, NULL },
-	{ "scroll-right",			3, NULL },
-	{ "scroll-up-end",			3, NULL },
-	{ "scroll-down-end",			3, NULL },
-	{ "scroll-left-end",			3, NULL },
-	{ "scroll-right-end",			3, NULL },
-	{ "dialog-ok",				3, NULL },
-	{ "dialog-cancel",			3, NULL },
-	{ "drag-start",				3, NULL },
-	{ "drag-accept",			3, NULL },
-	{ "drag-fail",				3, NULL },
-	{ "link-pressed",			3, NULL },
-	{ "link-released",			3, NULL },
-	{ "menu-click",				3, NULL },
-	{ "button-toggle-on",			3, NULL },
-	{ "button-toggle-off",			3, NULL },
-	{ "expander-toggle-on",			3, NULL },
-	{ "expander-toggle-off",		3, NULL },
-	{ "menu-popup",				3, NULL },
-	{ "menu-popdown",			3, NULL },
-	{ "menu-replace",			3, NULL },
-	{ "tooltip-popup",			3, NULL },
-	{ "tooltip-popdown",			3, NULL },
-	{ "item-selected",			3, NULL },
+	{ "window-close",			3, "Window Close"			 },
+	{ "window-slide-in",			3, "Window Slide In"			 },
+	{ "window-slide-out",			3, "Window Slide Out"			 },
+	{ "window-slide-in-shade",		3, "Window Shade"			 }, /* XXX - extension */
+	{ "window-slide-out-unshade",		3, "Window Unshade"			 }, /* XXX - extension */
+	{ "window-float",			3, "Window Float"			 }, /* XXX - extension */
+	{ "window-unfloat",			3, "Window Tile"			 }, /* XXX - extension */
+	{ "window-stick",			3, "Window Stick"			 }, /* XXX - extension */
+	{ "window-unstick",			3, "Window Unstick"			 }, /* XXX - extension */
+	{ "window-stack-above",			3, "Window Stack Above"			 }, /* XXX - extension */
+	{ "window-stack-below",			3, "Window Stack Below"			 }, /* XXX - extension */
+	{ "window-minimized",			3, "Window Minimized"			 },
+	{ "window-unminimized",			3, "Window Unminimized"			 },
+	{ "window-minimized-hidden",		3, "Window Hidden"			 }, /* XXX - extension */
+	{ "window-unminimized-unhidden",	3, "Window Unhidden"			 }, /* XXX - extension */
+	{ "window-decorated",			3, "Window Decorated"			 }, /* XXX - extension */
+	{ "window-undecorated",			3, "Window Undecorated"			 }, /* XXX - extension */
+	{ "window-maximized",			3, "Window Maximized"			 },
+	{ "window-unmaximized",			3, "Window Unmaximized"			 },
+	{ "window-maximized-vertical",		3, "Window Maximized Vertical"		 }, /* XXX - extension */
+	{ "window-maximized-horizontal",	3, "Window Maximized Horizontal"	 }, /* XXX - extension */
+	{ "window-maximized-left",		3, "Window Maximized Left"		 }, /* XXX - extension */
+	{ "window-maximized-right",		3, "Window Maximized Right"		 }, /* XXX - extension */
+	{ "window-maximized-fullscreen",	3, "Window Maximized Fullscreen"	 }, /* XXX - extension */
+	{ "window-maximized-filled",		3, "Window Maximized Filled"		 }, /* XXX - extension */
+	{ "window-unmaximized-vertical",	3, "Window Unmaximized Vertical"	 }, /* XXX - extension */
+	{ "window-unmaximized-horizontal",	3, "Window Unmaximized Horizontal"	 }, /* XXX - extension */
+	{ "window-unmaximized-left",		3, "Window Unmaximized Left"		 }, /* XXX - extension */
+	{ "window-unmaximized-right",		3, "Window Unmaximized Right"		 }, /* XXX - extension */
+	{ "window-unmaximized-fullscreen",	3, "Window Unmaximized Fullscreen"	 }, /* XXX - extension */
+	{ "window-unmaximized-unfilled",	3, "Window Unmaximized Unfilled"	 }, /* XXX - extension */
+	{ "window-inactive-click",		3, "Window Inactive Click"		 },
+	{ "window-move-start",			3, "Window Move Begin"			 },
+	{ "window-move-end",			3, "Window Move End"			 },
+	{ "window-move-sendto",			3, "Window Send To"			 }, /* XXX - extension */
+	{ "window-move-taketo",			3, "Window Take To"			 }, /* XXX - extension */
+	{ "window-resize-start",		3, "Window Resize Begin"		 },
+	{ "window-resize-end",			3, "Window Resize End"			 },
+	{ "desktop-switch-left",		3, "Desktop Switch Left"		 },
+	{ "desktop-switch-right",		3, "Desktop Switch Right"		 },
+	{ "desktop-switch-up",			3, "Desktop Switch Up"			 }, /* XXX - extension */
+	{ "desktop-switch-down",		3, "Desktop Switch Down"		 }, /* XXX - extension */
+	{ "desktop-created",			3, "Desktop Created"			 }, /* XXX - extension */
+	{ "desktop-destroyed",			3, "Desktop Destroyed"			 }, /* XXX - extension */
+	{ "workspace-created",			3, "Workspace Created"			 }, /* XXX - extension */
+	{ "workspace-destroyed",		3, "Workspace Destroyed"		 }, /* XXX - extension */
+	{ "window-switch",			3, "Window Switch"			 },
+	{ "notebook-tab-changed",		3, "Notebook Tab Changed"		 },
+	{ "scroll-up",				3, "Scroll Up"				 },
+	{ "scroll-down",			3, "Scroll Down"			 },
+	{ "scroll-left",			3, "Scroll Left"			 },
+	{ "scroll-right",			3, "Scroll Right"			 },
+	{ "scroll-up-end",			3, "Scroll Up End"			 },
+	{ "scroll-down-end",			3, "Scroll Down End"			 },
+	{ "scroll-left-end",			3, "Scroll Left End"			 },
+	{ "scroll-right-end",			3, "Scroll Right End"			 },
+	{ "dialog-ok",				3, "Dialog OK"				 },
+	{ "dialog-cancel",			3, "Dialog Cancel"			 },
+	{ "drag-start",				3, "Drag Start"				 },
+	{ "drag-accept",			3, "Drag Accept"			 },
+	{ "drag-fail",				3, "Drag Fail"				 },
+	{ "link-pressed",			3, "Link Pressed"			 },
+	{ "link-released",			3, "Link Released"			 },
+	{ "button-pressed",			3, "Button Pressed"			 },
+	{ "button-released",			3, "Button Released"			 },
+	{ "menu-click",				3, "Menu Click"				 },
+	{ "button-toggle-on",			3, "Button Toggle On"			 },
+	{ "button-toggle-off",			3, "Button Toggle Off"			 },
+	{ "expander-toggle-on",			3, "Expander Toggle On"			 },
+	{ "expander-toggle-off",		3, "Expander Toggle Off"		 },
+	{ "menu-popup",				3, "Menu Popup"				 },
+	{ "menu-popdown",			3, "Menu Popdown"			 },
+	{ "menu-replace",			3, "Menu Replace"			 },
+	{ "tooltip-popup",			3, "Tooltip Popup"			 },
+	{ "tooltip-popdown",			3, "Tooltip Popdown"			 },
+	{ "item-selected",			3, "Item Selected"			 },
 	/* Standard Game Sounds */
-	{ "game-over-winner",			4, NULL },
-	{ "game-over-loser",			4, NULL },
-	{ "game-card-shuffle",			4, NULL },
-	{ "game-human-move",			4, NULL },
-	{ "game-computer-move",			4, NULL },
+	{ "game-over-winner",			4, "Game-Over (Winner)"			 },
+	{ "game-over-loser",			4, "Game-Over (Loser)"			 },
+	{ "game-card-shuffle",			4, "Card Shuffle"			 },
+	{ "game-human-move",			4, "Human Move"				 },
+	{ "game-computer-move",			4, "Computer Move"			 },
 	{ NULL,					0, NULL }
 };
 
-static const char *StandardSoundNames[] = {
-	/* Standard Alert Sounds */
-	"network-connectivity-lost",
-	"network-connectivity-error",
-	"dialog-error",
-	"battery-low",
-	"suspend-error",
-	"software-update-urgent",
-	"power-unplug-battery-low",
-	/* Standard Notifications Sounds */
-	"message-new-instant",
-	"message-new-email",
-	"complete-media-burn",
-	"complete-media-rip",
-	"complete-download",
-	"complete-copy",
-	"complete-scan",
-	"phone-incoming-call",
-	"phone-outgoing-busy",
-	"phone-hangup",
-	"phone-failure",
-	"network-connectivity-established",
-	"system-bootup",
-	"system-ready",
-	"system-shutdown",
-	"search-results",
-	"search-results-empty",
-	"desktop-login",
-	"desktop-logout",
-	"desktop-screen-lock",
-	"desktop-screen-unlock",
-	"service-login",
-	"service-logout",
-	"battery-caution",
-	"battery-full",
-	"dialog-warning",
-	"dialog-information",
-	"dialog-question",
-	"software-update-available",
-	"device-added",
-	"device-removed",
-	"window-new",
-	"power-plug",
-	"power-unplug",
-	"suspend-start",
-	"suspend-resume",
-	"lid-open",
-	"lid-close",
-	"alarm-clock-elapsed",
-	"window-attention-active",
-	"window-attention-inactive",
-	/* Standard Action Sounds */
-	"phone-outgoing-calling",
-	"message-sent-instant",
-	"message-sent-email",
-	"bell-terminal",
-	"bell-window-system",
-	"trash-empty",
-	"item-deleted",
-	"file-trash",
-	"camera-shutter",
-	"camera-focus",
-	"screen-capture",
-	"count-down",
-	"completion-success",
-	"completion-fail",
-	"completion-partial",
-	"completion-rotation",
-	"audio-volume-change",
-	"audio-channel-left",
-	"audio-channel-right",
-	"audio-channel-front-left",
-	"audio-channel-front-right",
-	"audio-channel-front-center",
-	"audio-channel-rear-left",
-	"audio-channel-rear-right",
-	"audio-channel-rear-center",
-	"audio-channel-lfe",
-	"audio-channel-side-left",
-	"audio-channel-side-right",
-	"audio-test-signal",
-	/* Standard Input Feedback Sounds */
-	"window-close",
-	"window-slide-in",
-	"window-slide-out",
-	"window-minimized",
-	"window-unminimized",
-	"window-maximized",
-	"window-unmaximized",
-	"window-inactive-click",
-	"window-move-start",
-	"window-move-end",
-	"window-resize-start",
-	"window-resize-end",
-	"desktop-switch-left",
-	"desktop-switch-right",
-	"window-switch",
-	"notebook-tab-changed",
-	"scroll-up",
-	"scroll-down",
-	"scroll-left",
-	"scroll-right",
-	"scroll-up-end",
-	"scroll-down-end",
-	"scroll-left-end",
-	"scroll-right-end",
-	"dialog-ok",
-	"dialog-cancel",
-	"drag-start",
-	"drag-accept",
-	"drag-fail",
-	"link-pressed",
-	"link-released",
-	"menu-click",
-	"button-toggle-on",
-	"button-toggle-off",
-	"expander-toggle-on",
-	"expander-toggle-off",
-	"menu-popup",
-	"menu-popdown",
-	"menu-replace",
-	"tooltip-popup",
-	"tooltip-popdown",
-	"item-selected",
-	/* Standard Game Sounds */
-	"game-over-winner",
-	"game-over-loser",
-	"game-card-shuffle",
-	"game-human-move",
-	"game-computer-move",
-	NULL
-};
+GHashTable *stdevents = NULL;
 
 static ca_context *ca = NULL;
 static int efd = -1;
@@ -566,7 +475,6 @@ finish_cb(ca_context *c, uint32_t id, int error_code, void *userdata) {
 static void
 init_play(void)
 {
-	const char *env;
 	int r;
 
 	if (!options.play || options.noplay)
@@ -586,10 +494,14 @@ init_play(void)
 		EPRINTF("Failed to change metadata: %s\n", ca_strerror(r));
 		goto fail;
 	}
+#if 0
+	/* should probably not do this */
+	const char *env;
 	if ((env = getenv("DISPLAY")) && (r = ca_context_change_props(ca, CA_PROP_WINDOW_X11_SCREEN, env, NULL)) < 0) {
 		EPRINTF("Failed to change metadata: %s\n", ca_strerror(r));
 		goto fail;
 	}
+#endif
 	if ((r = ca_context_open(ca)) < 0) {
 		EPRINTF("Failed to open device: %s\n", ca_strerror(r));
 		goto fail;
@@ -822,6 +734,12 @@ parse_file(char *path)
 
 /** @} */
 
+static const struct Sound *
+is_standard(const char *eventid)
+{
+	return (g_hash_table_lookup(stdevents, eventid));
+}
+
 static void
 play_path(const char *eventid, const char *path)
 {
@@ -886,6 +804,10 @@ output_path(const char *eventid, const char *path)
 
 	file = strdup(path);
 
+	if ((options.extensions && eventid && is_standard(eventid)))
+		return 0;
+	if (options.standard && eventid && options.missing)
+		return 1;
 	if (!lstat(file, &st) && S_ISLNK(st.st_mode)) {
 		DPRINTF(1, "file %s is a symbolic link\n", file);
 		if (options.dereflinks) {
@@ -1786,7 +1708,6 @@ do_listem(int argc, char *argv[])
 
 	(void) argc;
 	(void) argv;
-	(void) StandardSoundNames;
 	init_play();
 	if (options.context && *options.context) {
 		const char **ctx;
@@ -2181,6 +2102,35 @@ get_default_theme(void)
 }
 
 static void
+get_default_events(void)
+{
+	const struct Sound *sound;
+
+	if (stdevents)
+		g_hash_table_destroy(stdevents);
+	stdevents = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	for (sound = StandardSounds; sound->eventid; sound++) {
+		char *eventid;
+
+		for (eventid = strdup(sound->eventid); *eventid;) {
+			struct Sound *s;
+			char *p;
+
+			s = calloc(1, sizeof(*s));
+			*s = *sound;
+			DPRINTF(1, "Adding standard event '%s'\n", eventid);
+			g_hash_table_replace(stdevents, g_strdup(eventid), s);
+			if ((p = strrchr(eventid, '-'))) {
+				*p = '\0';
+			} else {
+				*eventid = '\0';
+			}
+		}
+		free(eventid);
+	}
+}
+
+static void
 get_defaults(int argc, char *argv[])
 {
 	(void) argc;
@@ -2189,6 +2139,7 @@ get_defaults(int argc, char *argv[])
 	get_default_dirs();
 	get_default_profile();
 	get_default_theme();
+	get_default_events();
 }
 
 static void
@@ -2378,6 +2329,8 @@ main(int argc, char *argv[])
 			{"theme",		required_argument,	NULL,	'N'},
 			{"profile",		required_argument,	NULL,	'P'},
 			{"standard",		no_argument,		NULL,	'S'},
+			{"extensions",		no_argument,		NULL,	'x'},
+			{"missing",		no_argument,		NULL,	'M'},
 			{"headers",		no_argument,		NULL,	'r'},
 			{"deref",		no_argument,		NULL,	'd'},
 			{"context",		required_argument,	NULL,	'c'},
@@ -2396,10 +2349,10 @@ main(int argc, char *argv[])
 		};
 		/* *INDENT-ON* */
 
-		c = getopt_long_only(argc, argv, "snlaotOTN:P:Srdc:u:m:i:I:D::v::hVCH?", long_options,
+		c = getopt_long_only(argc, argv, "snlaotOTN:P:SxMrdc:u:m:i:I:D::v::hVCH?", long_options,
 				     &option_index);
 #else				/* _GNU_SOURCE */
-		c = getopt(argc, argv, "snlaotOTN:P:Srdc:u:m:i:I:DvhVCH?");
+		c = getopt(argc, argv, "snlaotOTN:P:SxMrdc:u:m:i:I:DvhVCH?");
 #endif				/* _GNU_SOURCE */
 		if (c == -1) {
 			if (options.debug)
@@ -2470,6 +2423,17 @@ main(int argc, char *argv[])
 			break;
 		case 'S':	/* -S, --standard */
 			options.standard = 1;
+			options.extensions = 0;
+			break;
+		case 'x':	/* -x, --extensions */
+			options.extensions = 1;
+			options.standard = 0;
+			options.missing = 0;
+			break;
+		case 'M':	/* -M, --missing */
+			options.missing = 1;
+			options.standard = 1;
+			options.extensions = 0;
 			break;
 		case 'r':	/* -r, --headers */
 			options.headers = !options.headers;
