@@ -67,6 +67,18 @@ When used with the B<--show> command mode, list all standard XDG event
 names found in the freedesktop.org XDG sound naming specification,
 instead of the available ones.
 
+=item B<-x>, B<--extensions>
+
+When used with the B<--show> command mode, list all available
+non-standard XDG event names not found in the freedesktop.org XDG sound
+naming specification.  Mutually exclusive with the B<--standard> option.
+
+=item B<-M>, B<--missing>
+
+When used with the B<--show> command mode, list only standard XDG event
+names that are not supported but found in the freedesktop.org XDG sound
+naming specification.  Implies option B<--standard>.
+
 =item B<-a>, B<--all>
 
 Normally only the first matching event sound file for a given event
