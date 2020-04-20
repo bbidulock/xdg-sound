@@ -1,9 +1,9 @@
-[xdg-sound -- read me first file.  2020-04-19]: #
+[xdg-sound -- read me first file.  2020-04-20]: #
 
 xdg-sound
 ===============
 
-Package `xdg-sound-0.9` was released under GPLv3 license 2020-04-19.
+Package `xdg-sound-0.9` was released under GPLv3 license 2020-04-20.
 
 This package contains "C"-language programs and utilities for working
 with (locating and playing) event sound files from XDG sound themes.
@@ -19,7 +19,7 @@ wrapper scripts.
 Release
 -------
 
-This is the `xdg-sound-0.9` package, released 2020-04-19.  This
+This is the `xdg-sound-0.9` package, released 2020-04-20.  This
 release, and the latest version, can be obtained from [GitHub][1], using
 a command such as:
 

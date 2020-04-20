@@ -1,6 +1,6 @@
-xdg-sound -- history of user-visible changes.  2020-04-19
+xdg-sound -- history of user-visible changes.  2020-04-20
 
-Release xdg-sound-0.9 released 2020-04-19
+Release xdg-sound-0.9 released 2020-04-20
 -----------------------------------------
 
 git tag -n100 -l 0.9
@@ -21,7 +21,7 @@ git tag -n100 -l 0.9
 
 git shortlog -e -n -w80,6,8 0.9
 
-Brian Bidulock <bidulock@openss7.org> (41):
+Brian Bidulock <bidulock@openss7.org> (45):
       Initial commit
       update
       update release files
@@ -63,4 +63,8 @@ Brian Bidulock <bidulock@openss7.org> (41):
       document contexts
       handle whereis properly
       support play properly
+      update release files
+      handle standard events better
+      update manpage
+      document additional options
 

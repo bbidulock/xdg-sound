@@ -1,4 +1,4 @@
-[xdg-sound -- release notes.  2020-04-18]: #
+[xdg-sound -- release notes.  2020-04-20]: #
 
 Preliminary Release 0.9
 =======================
@@ -8,8 +8,8 @@ This is a preliminary release of the xdg-sound package that provides
 playing) event sound files from XDG sound themes.
 
 This release is a preliminary release that provides the location tools
-but not yet the ability to play the file: in the mean time, use
-gstreamer, libsndfile or libcanberra to play sound files.
+and the ability to play the file; however, display of sound data is not
+yet supported.
 
 Included in the release is an autoconf tarball for building the package
 from source.  See the [NEWS](NEWS) and [TODO](TODO) file in the release

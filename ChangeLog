@@ -1,5 +1,48 @@
 # created with git log --stat=76 -M -C -500|fmt -sct -w80
 
+commit 92e1fc4a575b42855f142494e9c5137810672997
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Mon Apr 20 00:57:33 2020 -0600
+
+    document additional options
+
+ man/xdg-play.pod          | 12 ++++++++++++
+ man/xdg-sound-list.pod    | 12 ++++++++++++
+ man/xdg-sound-whereis.pod | 12 ++++++++++++
+ man/xdg-sound-which.pod   | 12 ++++++++++++
+ 4 files changed, 48 insertions(+)
+
+commit b48c6f4a86e91cdb17f08b9ab44f3448eab8841d
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Mon Apr 20 00:52:46 2020 -0600
+
+    update manpage
+
+ man/xdg-play.pod | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+commit e9d9a1ab015fb93470763228452e66284be87594
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Mon Apr 20 00:52:18 2020 -0600
+
+    handle standard events better
+
+ src/xdg-play.c          | 484 ++++++++++++++++++++------------------------
+ src/xdg-sound-list.c    | 484 ++++++++++++++++++++------------------------
+ src/xdg-sound-whereis.c | 484 ++++++++++++++++++++------------------------
+ src/xdg-sound-which.c   | 484 ++++++++++++++++++++------------------------
+ 4 files changed, 896 insertions(+), 1040 deletions(-)
+
+commit 7130a2cf3c776da1214535d4eab9d4fb5c456167
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sun Apr 19 21:24:43 2020 -0600
+
+    update release files
+
+ ChangeLog | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ NEWS      |  6 +++++-
+ 2 files changed, 54 insertions(+), 1 deletion(-)
+
 commit 149162848a98e8ee1b8e393e90d20afedcea760c
 Author: Brian Bidulock <bidulock@openss7.org>
 Date:   Sun Apr 19 21:23:21 2020 -0600
