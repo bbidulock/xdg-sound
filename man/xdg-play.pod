@@ -17,6 +17,13 @@ B< xdg-play> [{B<-p>|B<--play>}]  [I<OPTIONS>] [--] I<EVENTID> [...]
 
 =head1 DESCRIPTION
 
+B<xdg-play> takes one or more arguments.  For each of its arguments, it
+prints to standard output the full path of the sound file that will
+be played and then plays the sound file.  It does this by searching for
+a sound entry in the appropriate sub-directories of the C<XDG_DATA_DIRS>
+and C<XDG_DATA_HOME> environment variables in accordance with the
+L<XDG Sound Theme Specification>.
+
 =head1 ARGUMENTS
 
 The program accepts the following arguments:
@@ -103,6 +110,10 @@ specified by C<XDG_DATA_DIRS> and C<XDG_DATA_HOME>.
 See also, L<xdg-sound-whereis(1)>, that provides the same function.
 
 =item B<-s>, B<--show>
+
+List all of the event identifiers and sound files associated with the
+current sound theme.  When B<--standard> is specified, list only the
+standard event identifiers from the L<XDG Sound Naming Specification>.
 
 See also, L<xdg-sound-list(1)>, that provides the same function.
 
@@ -386,6 +397,7 @@ L<https://github.com/bbidulock/xdg-sound/issues>.
 
 =head1 SEE ALSO
 
+L<XDG Sound Theme Specification>,
 L<getopt_long_only(3)>,
 L<xdg-sound-list(1)>,
 L<xdg-sound-whereis(1)>,
