@@ -357,16 +357,22 @@ static const struct Sound {
 	{ "audio-test-signal",			2, "Audio Test Signal"			 },
 	/* Standard Input Feedback Sounds */
 	{ "window-close",			3, "Window Close"			 },
-	{ "window-slide-in",			3, "Window Slide In"			 },
 	{ "window-slide-out",			3, "Window Slide Out"			 },
-	{ "window-slide-in-shade",		3, "Window Shade"			 }, /* XXX - extension */
-	{ "window-slide-out-unshade",		3, "Window Unshade"			 }, /* XXX - extension */
-	{ "window-float",			3, "Window Float"			 }, /* XXX - extension */
-	{ "window-unfloat",			3, "Window Tile"			 }, /* XXX - extension */
+	{ "window-slide-in",			3, "Window Slide In"			 },
+	{ "window-slide-out-shade",		3, "Window Shade"			 }, /* XXX - extension */
+	{ "window-slide-in-unshade",		3, "Window Unshade"			 }, /* XXX - extension */
+	{ "window-slide-out-sendto",		3, "Window Send To"			 }, /* XXX - extension */
+	{ "window-slide-in-taketo",		3, "Window Take To"			 }, /* XXX - extension */
 	{ "window-stick",			3, "Window Stick"			 }, /* XXX - extension */
 	{ "window-unstick",			3, "Window Unstick"			 }, /* XXX - extension */
-	{ "window-stack-above",			3, "Window Stack Above"			 }, /* XXX - extension */
-	{ "window-stack-below",			3, "Window Stack Below"			 }, /* XXX - extension */
+	{ "window-stick-unfloat",		3, "Window Tile"			 }, /* XXX - extension */
+	{ "window-unstick-float",		3, "Window Float"			 }, /* XXX - extension */
+	{ "window-stick-pinned",		3, "Window Pinned"			 }, /* XXX - extension */
+	{ "window-unstick-unpinned",		3, "Window Unpinned"			 }, /* XXX - extension */
+	{ "window-raise",			3, "Window Raise"			 }, /* XXX - extension */
+	{ "window-lower",			3, "Window Lower"			 }, /* XXX - extension */
+	{ "window-raise-above",			3, "Window Stack Above"			 }, /* XXX - extension */
+	{ "window-lower-below",			3, "Window Stack Below"			 }, /* XXX - extension */
 	{ "window-minimized",			3, "Window Minimized"			 },
 	{ "window-unminimized",			3, "Window Unminimized"			 },
 	{ "window-minimized-hidden",		3, "Window Hidden"			 }, /* XXX - extension */
@@ -390,14 +396,12 @@ static const struct Sound {
 	{ "window-inactive-click",		3, "Window Inactive Click"		 },
 	{ "window-move-start",			3, "Window Move Begin"			 },
 	{ "window-move-end",			3, "Window Move End"			 },
-	{ "window-move-sendto",			3, "Window Send To"			 }, /* XXX - extension */
-	{ "window-move-taketo",			3, "Window Take To"			 }, /* XXX - extension */
 	{ "window-resize-start",		3, "Window Resize Begin"		 },
 	{ "window-resize-end",			3, "Window Resize End"			 },
 	{ "desktop-switch-left",		3, "Desktop Switch Left"		 },
 	{ "desktop-switch-right",		3, "Desktop Switch Right"		 },
-	{ "desktop-switch-up",			3, "Desktop Switch Up"			 }, /* XXX - extension */
-	{ "desktop-switch-down",		3, "Desktop Switch Down"		 }, /* XXX - extension */
+	{ "desktop-switch-left-up",		3, "Desktop Switch Up"			 }, /* XXX - extension */
+	{ "desktop-switch-right-down",		3, "Desktop Switch Down"		 }, /* XXX - extension */
 	{ "desktop-created",			3, "Desktop Created"			 }, /* XXX - extension */
 	{ "desktop-destroyed",			3, "Desktop Destroyed"			 }, /* XXX - extension */
 	{ "workspace-created",			3, "Workspace Created"			 }, /* XXX - extension */
