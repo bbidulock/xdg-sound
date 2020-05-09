@@ -22,11 +22,12 @@ git tag -n100 -l 1.0
 
 git shortlog -e -n -w80,6,8 0.9...1.0
 
-Brian Bidulock <bidulock@openss7.org> (4):
+Brian Bidulock <bidulock@openss7.org> (5):
       post release update
       redefine extensions somewhat (better fallback)
       some improvements to functionality
       document -X,--extended option
+      update release files
 
 
 Release xdg-sound-0.9 released 2020-04-20
