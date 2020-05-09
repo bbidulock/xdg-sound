@@ -183,6 +183,7 @@ typedef struct {
 	int showtilde;
 	int standard;
 	int extensions;
+	int extended;
 	int missing;
 	int headers;
 	int dereflinks;
@@ -210,6 +211,7 @@ Options options = {
 	.showtilde = 0,
 	.standard = 0,
 	.extensions = 0,
+	.extended = 0,
 	.missing = 0,
 	.headers = 0,
 	.dereflinks = 0,
@@ -271,178 +273,327 @@ static const char *StandardContexts[] = {
 static const struct Sound {
 	const char *eventid;
 	int context;
+	int extended;
 	const char *data;
 } StandardSounds[] = {
 	/* Standard Alert Sounds */
-	{ "network-connectivity-lost",		0, "Network Connectivity Lost"		 },
-	{ "network-connectivity-error",		0, "Network Connectivity Error"		 },
-	{ "dialog-error",			0, "Dialog Error"			 },
-	{ "battery-low",			0, "Battery Low"			 },
-	{ "suspend-error",			0, "Suspend Error"			 },
-	{ "software-update-urgent",		0, "Urgent Software Update"		 },
-	{ "power-unplug-battery-low",		0, "Power Cord Unplugged Battery Low"	 },
+	{ "network-connectivity-lost",			0, 0, "Network Connectivity Lost"		 },
+	{ "network-connectivity-error",			0, 0, "Network Connectivity Error"		 },
+	{ "dialog-error",				0, 0, "Error Dialog"				 },
+	{ "dialog-error-critical",			0, 1, "Critical Error Dialog"			 },
+	{ "dialog-error-serious",			0, 1, "Serious Error Dialog"			 },
+	{ "battery-low",				0, 0, "Low Battery"				 },
+	{ "battery-low-keyboard",			0, 1, "Low Keyboard Battery"			 },
+	{ "battery-low-mouse",				0, 1, "Low Mouse Battery"			 },
+	{ "suspend-error",				0, 0, "Suspend Error"				 },
+	{ "software-update-urgent",			0, 0, "Urgent Software Update"			 },
+	{ "power-unplug-battery-low",			0, 0, "Power Cord Unplugged Battery Low"	 },
+	{ "desktop-session-restore-failed",		0, 1, "Session Restoration Failed"		 },
+	{ "desktop-session-save-failed",		0, 1, "Session Save Failed"			 },
+	{ "thermal-hot",				0, 1, "Device Hot"				 },
+	{ "thermal-hot-cpu",				0, 1, "CPU Hot"					 },
+	{ "thermal-hot-gpu",				0, 1, "GPU HOt"					 },
 	/* Standard Notifications Sounds */
-	{ "message-new-instant",		1, "New Instant Message"		 },
-	{ "message-new-email",			1, "New Email Message"			 },
-	{ "complete-media-burn",		1, "Media Burn Complete"		 },
-	{ "complete-media-rip",			1, "Media Rip Complete"			 },
-	{ "complete-download",			1, "Download Complete"			 },
-	{ "complete-copy",			1, "Copy Complete"			 },
-	{ "complete-scan",			1, "Scan Complete"			 },
-	{ "phone-incoming-call",		1, "Incoming Phone Call"		 },
-	{ "phone-outgoing-busy",		1, "Outgoing Phone Call Busy"		 },
-	{ "phone-hangup",			1, "Phone Hangup"			 },
-	{ "phone-failure",			1, "Phone Call Failure"			 },
-	{ "network-connectivity-established",	1, "Network Connectivity Established"	 },
-	{ "system-bootup",			1, "System Bootup"			 },
-	{ "system-ready",			1, "System Ready"			 },
-	{ "system-shutdown",			1, "System Shutdown"			 },
-	{ "system-shutdown-reboot",		1, "System Shutdown Reboot"		 }, /* XXX -extension */
-	{ "search-results",			1, "Search Results"			 },
-	{ "search-results-empty",		1, "Search Results Empty"		 },
-	{ "desktop-login",			1, "Desktop Login"			 },
-	{ "desktop-logout",			1, "Desktop Logout"			 },
-	{ "desktop-screen-lock",		1, "Desktop Screen Lock"		 },
-	{ "desktop-screen-unlock",		1, "Desktop Screen Unlock"		 },
-	{ "service-login",			1, "Service Login"			 },
-	{ "service-logout",			1, "Service Logout"			 },
-	{ "battery-caution",			1, "Battery Caution"			 },
-	{ "battery-full",			1, "Battery Full"			 },
-	{ "dialog-warning",			1, "Warning Dialog"			 },
-	{ "dialog-information",			1, "Information Dialog"			 },
-	{ "dialog-question",			1, "Question Dialog"			 },
-	{ "software-update-available",		1, "Available Software Update"		 },
-	{ "device-added",			1, "Device Added"			 },
-	{ "device-removed",			1, "Device Removed"			 },
-	{ "window-new",				1, "New Window"				 },
-	{ "power-plug",				1, "Power Cord Plugged"			 },
-	{ "power-unplug",			1, "Power Cord Unplugged"		 },
-	{ "suspend-start",			1, "Suspend Start"			 },
-	{ "suspend-resume",			1, "Suspend Resume"			 },
-	{ "lid-open",				1, "Lid Open"				 },
-	{ "lid-close",				1, "Lid Close"				 },
-	{ "alarm-clock-elapsed",		1, "Alarm Clock Elapsed"		 },
-	{ "window-attention-active",		1, "Attention Active Window"		 },
-	{ "window-attention-inactive",		1, "Attention Inactive Window"		 },
-	{ "window-urgent",			1, "Urgent Window"			 }, /* XXX - extension */
+	{ "message-new-instant",			1, 0, "New Instant Message"			 },
+	{ "message-new-email",				1, 0, "New Email Message"			 },
+	{ "message-new-voicemail",			1, 1, "New Voicemail Message"			 },
+	{ "message-new",				1, 1, "New Message"				 },
+	{ "message",					1, 1, "Message"					 },
+	{ "complete-media-burn",			1, 0, "Optical Medium Burning Complete"		 },
+	{ "complete-media-rip",				1, 0, "Optical Medium Ripping Complete"		 },
+	{ "complete-media",				1, 1, "Optical Medium Processing Complete"	 },
+	{ "complete-download",				1, 0, "File Download Complete"			 },
+	{ "complete-copy",				1, 0, "File Copy Complete"			 },
+	{ "complete-scan",				1, 0, "Scanner Completed Image Acquisition"	 },
+	{ "complete-print",				1, 1, "File Print Complete"			 },
+	{ "complete",					1, 1, "Action Complete"				 },
+	{ "phone-incoming-call",			1, 0, "Incoming Phone Call"			 },
+	{ "phone-outgoing-busy",			1, 0, "Outgoing Phone Call Busy"		 },
+	{ "phone-hangup",				1, 0, "Phone Hung Up"				 },
+	{ "phone-failure",				1, 0, "Phone Call Cancelled Due To Error"	 },
+	{ "network-connectivity-established",		1, 0, "Network Connectivity Established"	 },
+	{ "system-bootup",				1, 0, "Initiating Startup Sequence"		 },
+	{ "system-ready",				1, 0, "Ready for System Log In"			 },
+	{ "system-shutdown",				1, 0, "Initiating Shutdown Sequence"		 },
+	{ "system-shutdown-reboot",			1, 1, "Initiating Restart Sequence"		 },
+	{ "search-results",				1, 0, "Search Results Returned"			 },
+	{ "search-results-empty",			1, 0, "No Search Results Returned"		 },
+	{ "desktop-login",				1, 0, "Welcome to the X Desktop Environment"	 },
+	{ "desktop-logout",				1, 0, "Leaving the X Desktop Environment"	 },
+	{ "desktop-screen-lock",			1, 0, "Screen Locked"				 },
+	{ "desktop-screen-unlock",			1, 0, "Screen Unlocked"				 },
+	{ "desktop-layout-changed",			1, 1, "Desktop Layout Changed"			 },
+	{ "desktop-session-create",			1, 1, "Session Created"				 },
+	{ "desktop-session-restore",			1, 1, "Session Restored"			 },
+	{ "desktop-session-save",			1, 1, "Session Saved"				 },
+	{ "service-login",				1, 0, "User Logged Into Service"		 },
+	{ "service-logout",				1, 0, "User Logged Out of Service"		 },
+	{ "battery-caution-keyboard",			1, 1, "Keyboard Battery Nearing Exhaustion"	 },
+	{ "battery-caution-mouse",			1, 1, "Mouse Battery Nearing Exhaustion"	 },
+	{ "battery-caution",				1, 0, "Battery Nearing Exhaustion"		 },
+	{ "battery-full-keyboard",			1, 1, "Keyboard Battery Is Fully Charged"	 },
+	{ "battery-full-mouse",				1, 1, "Mouse Battery Is Fully Charged"		 },
+	{ "battery-full",				1, 0, "Battery Is Fully Charged"		 },
+	{ "battery-charging-keyboard",			1, 1, "Keyboard Battery Charging"		 },
+	{ "battery-charging-mouse",			1, 1, "Mouse Battery Charging"			 },
+	{ "battery-charging",				1, 1, "Battery Charging"			 },
+	{ "battery-discharging-keyboard",		1, 1, "Keyboard Battery Discharging"		 },
+	{ "battery-discharging-mouse",			1, 1, "Mouse Battery Discharging"		 },
+	{ "battery-discharging",			1, 1, "Battery Discharging"			 },
+	{ "battery-empty-keyboard",			1, 1, "Keyboard Battery Empty"			 },
+	{ "battery-empty-mouse",			1, 1, "Mouse Battery Empty"			 },
+	{ "battery-empty",				1, 1, "Battery Empty"				 },
+	{ "dialog-warning",				1, 0, "Warning Dialog"				 },
+	{ "dialog-information",				1, 0, "Information Dialog"			 },
+	{ "dialog-question",				1, 0, "Question Dialog"				 },
+	{ "software-update-available",			1, 0, "Software Update Available"		 },
+	{ "device-added",				1, 0, "Device Added"				 },
+	{ "device-removed",				1, 0, "Device Removed"				 },
+	{ "window-new",					1, 0, "New Window Opened"			 },
+	{ "window-question",				1, 1, "Question Window Opened"			 },
+	{ "window-close-kill-process",			1, 1, "Window Killed by Process Identifier"	 },
+	{ "window-close-kill-server",			1, 1, "Window Killed by Server"			 },
+	{ "window-close-kill",				1, 1, "Window Killed"				 },
+	{ "window-ping",				1, 1, "Window Pinged"				 },
+	{ "power-plug",					1, 0, "The power cable has been plugged in"	 },
+	{ "power-unplug",				1, 0, "The power cable has been unplugged"	 },
+	{ "suspend-start",				1, 0, "Machine Suspending"			 },
+	{ "suspend-resume",				1, 0, "Machine Returned From Suspended State"	 },
+	{ "lid-open",					1, 0, "Lid Opened"				 },
+	{ "lid-close",					1, 0, "Lid Closed"				 },
+	{ "alarm-clock-elapsed",			1, 0, "Alarm Clock Elapsed"			 },
+	{ "window-attention-active",			1, 0, "Active Window Requires Attention"	 },
+	{ "window-attention-inactive",			1, 0, "Inactive Window Requires Attention"	 },
+	{ "window-attention",				1, 1, "Window Requires Attention"		 },
+	{ "window-urgent",				1, 1, "Urgent Window"				 },
+	{ "screen-brighter",				1, 1, "Screen Brighter"				 },
+	{ "screen-darker",				1, 1, "Screen Darker"				 },
+	{ "thermal-caution-cpu",			1, 1, "CPU has Heated Up"			 },
+	{ "thermal-caution-gpu",			1, 1, "GPU has Heated Up"			 },
+	{ "thermal-caution",				1, 1, "Device has Heated Up"			 },
+	{ "thermal-cool-cpu",				1, 1, "CPU has Cooled Down"			 },
+	{ "thermal-cool-gpu",				1, 1, "GPU has Cooled Down"			 },
+	{ "thermal-cool",				1, 1, "Device has Cooled Down"			 },
+	{ "window-manager-start-adwm",			1, 1, "ADWM Start"				 },
+	{ "window-manager-start-blackbox",		1, 1, "Blackbox Start"				 },
+	{ "window-manager-start",			1, 1, "Window Manager Start"			 },
+	{ "window-manager-reload",			1, 1, "Window Manager Reload"			 },
 	/* Standard Action Sounds */
-	{ "phone-outgoing-calling",		2, "Outgoing Phone Call Calling"	 },
-	{ "message-sent-instant",		2, "Instant Message Sent"		 },
-	{ "message-sent-email",			2, "Email Message Sent"			 },
-	{ "bell-terminal",			2, "Terminal Bell"			 },
-	{ "bell-window-system",			2, "Window System Bell"			 },
-	{ "trash-empty",			2, "Trash Empty"			 },
-	{ "item-deleted",			2, "Item Deleted"			 },
-	{ "file-trash",				2, "File Trashed"			 },
-	{ "camera-shutter",			2, "Camera Shutter"			 },
-	{ "camera-focus",			2, "Camera Focus"			 },
-	{ "screen-capture",			2, "Screen Capture"			 },
-	{ "count-down",				2, "Count Down"				 },
-	{ "completion-success",			2, "Completion (Success)"		 },
-	{ "completion-fail",			2, "Completion (Fail)"			 },
-	{ "completion-partial",			2, "Completion (Partial)"		 },
-	{ "completion-rotation",		2, "Rotation Completion"		 },
-	{ "audio-volume-change",		2, "Audio Volume Change"		 },
-	{ "audio-channel-left",			2, "Audio Channel Left"			 },
-	{ "audio-channel-right",		2, "Audio Channel Right"		 },
-	{ "audio-channel-front-left",		2, "Audio Channel Front Left"		 },
-	{ "audio-channel-front-right",		2, "Audio Channel Front Right"		 },
-	{ "audio-channel-front-center",		2, "Audio Channel Front Center"		 },
-	{ "audio-channel-rear-left",		2, "Audio Channel Rear Left"		 },
-	{ "audio-channel-rear-right",		2, "Audio Channel Rear Right"		 },
-	{ "audio-channel-rear-center",		2, "Audio Channel Rear Center"		 },
-	{ "audio-channel-lfe",			2, "Audio Channel LFE"			 },
-	{ "audio-channel-side-left",		2, "Audio Channel Side Left"		 },
-	{ "audio-channel-side-right",		2, "Audio Channel Side Right"		 },
-	{ "audio-test-signal",			2, "Audio Test Signal"			 },
+	{ "phone-outgoing-calling",			2, 0, "Outgoing Phone Call In Progress"		 },
+	{ "message-sent-instant",			2, 0, "Instant Message Sent"			 },
+	{ "message-sent-email",				2, 0, "Email Message Sent"			 },
+	{ "bell-terminal",				2, 0, "Terminal Bell"				 },
+	{ "bell-window-system",				2, 0, "Window System Bell"			 },
+	{ "bell",					2, 1, "Bell"					 },
+	{ "trash-empty",				2, 0, "Trash Emptied"				 },
+	{ "item-deleted",				2, 0, "Item Deleted"				 },
+	{ "file-trash",					2, 0, "File/Folder Sent To Trash"		 },
+	{ "camera-shutter",				2, 0, "Camera Shutter"				 },
+	{ "camera-focus",				2, 0, "Camera Focus"				 },
+	{ "screen-capture",				2, 0, "Screen Capture"				 },
+	{ "screen-capture-complete",			2, 1, "Screen Capture Complete"			 },
+	{ "count-down",					2, 0, "Counting down"				 },
+	{ "completion-success",				2, 0, "Text Completion (Success)"		 },
+	{ "completion-fail",				2, 0, "Text Completion (Fail)"			 },
+	{ "completion-partial",				2, 0, "Text Completion (Partial)"		 },
+	{ "completion-rotation",			2, 0, "Text Completion (Restart)"		 },
+	{ "audio-volume-change",			2, 0, "Audio Volume Change"			 },
+	{ "audio-channel-left",				2, 0, "Audio Channel Left"			 },
+	{ "audio-channel-right",			2, 0, "Audio Channel Right"			 },
+	{ "audio-channel-front-left",			2, 0, "Audio Channel Front Left"		 },
+	{ "audio-channel-front-right",			2, 0, "Audio Channel Front Right"		 },
+	{ "audio-channel-front-center",			2, 0, "Audio Channel Front Center"		 },
+	{ "audio-channel-rear-left",			2, 0, "Audio Channel Rear Left"			 },
+	{ "audio-channel-rear-right",			2, 0, "Audio Channel Rear Right"		 },
+	{ "audio-channel-rear-center",			2, 0, "Audio Channel Rear Center"		 },
+	{ "audio-channel-lfe",				2, 0, "Audio Channel Subwoofer"			 },
+	{ "audio-channel-side-left",			2, 0, "Audio Channel Side Left"			 },
+	{ "audio-channel-side-right",			2, 0, "Audio Channel Side Right"		 },
+	{ "audio-test-signal",				2, 0, "Audio Test Signal"			 },
+	{ "desktop-created",				2, 1, "Desktop Created"				 },
+	{ "desktop-destroyed",				2, 1, "Desktop Destroyed"			 },
+	{ "desktop-session-checkpoint",			2, 1, "Session Check-Point"			 },
+	{ "window-manager-quit-adwm",			2, 1, "ADWM Shutdown"				 },
+	{ "window-manager-quit-blackbox",		2, 1, "Blackbox Shutdown"			 },
+	{ "window-manager-quit",			2, 1, "Window Manager Quit"			 },
+	{ "window-manager-restart",			2, 1, "Window Manager Restart"			 },
+	{ "workspace-created",				2, 1, "Workspace Created"			 },
+	{ "workspace-destroyed",			2, 1, "Workspace Destroyed"			 },
 	/* Standard Input Feedback Sounds */
-	{ "window-close",			3, "Window Close"			 },
-	{ "window-slide-out",			3, "Window Slide Out"			 },
-	{ "window-slide-in",			3, "Window Slide In"			 },
-	{ "window-slide-out-shade",		3, "Window Shade"			 }, /* XXX - extension */
-	{ "window-slide-in-unshade",		3, "Window Unshade"			 }, /* XXX - extension */
-	{ "window-slide-out-sendto",		3, "Window Send To"			 }, /* XXX - extension */
-	{ "window-slide-in-taketo",		3, "Window Take To"			 }, /* XXX - extension */
-	{ "window-stick",			3, "Window Stick"			 }, /* XXX - extension */
-	{ "window-unstick",			3, "Window Unstick"			 }, /* XXX - extension */
-	{ "window-stick-unfloat",		3, "Window Tile"			 }, /* XXX - extension */
-	{ "window-unstick-float",		3, "Window Float"			 }, /* XXX - extension */
-	{ "window-stick-pinned",		3, "Window Pinned"			 }, /* XXX - extension */
-	{ "window-unstick-unpinned",		3, "Window Unpinned"			 }, /* XXX - extension */
-	{ "window-raise",			3, "Window Raise"			 }, /* XXX - extension */
-	{ "window-lower",			3, "Window Lower"			 }, /* XXX - extension */
-	{ "window-raise-above",			3, "Window Stack Above"			 }, /* XXX - extension */
-	{ "window-lower-below",			3, "Window Stack Below"			 }, /* XXX - extension */
-	{ "window-minimized",			3, "Window Minimized"			 },
-	{ "window-unminimized",			3, "Window Unminimized"			 },
-	{ "window-minimized-hidden",		3, "Window Hidden"			 }, /* XXX - extension */
-	{ "window-unminimized-unhidden",	3, "Window Unhidden"			 }, /* XXX - extension */
-	{ "window-decorated",			3, "Window Decorated"			 }, /* XXX - extension */
-	{ "window-undecorated",			3, "Window Undecorated"			 }, /* XXX - extension */
-	{ "window-maximized",			3, "Window Maximized"			 },
-	{ "window-unmaximized",			3, "Window Unmaximized"			 },
-	{ "window-maximized-vertical",		3, "Window Maximized Vertical"		 }, /* XXX - extension */
-	{ "window-maximized-horizontal",	3, "Window Maximized Horizontal"	 }, /* XXX - extension */
-	{ "window-maximized-left",		3, "Window Maximized Left"		 }, /* XXX - extension */
-	{ "window-maximized-right",		3, "Window Maximized Right"		 }, /* XXX - extension */
-	{ "window-maximized-fullscreen",	3, "Window Maximized Fullscreen"	 }, /* XXX - extension */
-	{ "window-maximized-filled",		3, "Window Maximized Filled"		 }, /* XXX - extension */
-	{ "window-unmaximized-vertical",	3, "Window Unmaximized Vertical"	 }, /* XXX - extension */
-	{ "window-unmaximized-horizontal",	3, "Window Unmaximized Horizontal"	 }, /* XXX - extension */
-	{ "window-unmaximized-left",		3, "Window Unmaximized Left"		 }, /* XXX - extension */
-	{ "window-unmaximized-right",		3, "Window Unmaximized Right"		 }, /* XXX - extension */
-	{ "window-unmaximized-fullscreen",	3, "Window Unmaximized Fullscreen"	 }, /* XXX - extension */
-	{ "window-unmaximized-unfilled",	3, "Window Unmaximized Unfilled"	 }, /* XXX - extension */
-	{ "window-inactive-click",		3, "Window Inactive Click"		 },
-	{ "window-move-start",			3, "Window Move Begin"			 },
-	{ "window-move-end",			3, "Window Move End"			 },
-	{ "window-resize-start",		3, "Window Resize Begin"		 },
-	{ "window-resize-end",			3, "Window Resize End"			 },
-	{ "desktop-switch-left",		3, "Desktop Switch Left"		 },
-	{ "desktop-switch-right",		3, "Desktop Switch Right"		 },
-	{ "desktop-switch-left-up",		3, "Desktop Switch Up"			 }, /* XXX - extension */
-	{ "desktop-switch-right-down",		3, "Desktop Switch Down"		 }, /* XXX - extension */
-	{ "desktop-created",			3, "Desktop Created"			 }, /* XXX - extension */
-	{ "desktop-destroyed",			3, "Desktop Destroyed"			 }, /* XXX - extension */
-	{ "workspace-created",			3, "Workspace Created"			 }, /* XXX - extension */
-	{ "workspace-destroyed",		3, "Workspace Destroyed"		 }, /* XXX - extension */
-	{ "window-switch",			3, "Window Switch"			 },
-	{ "notebook-tab-changed",		3, "Notebook Tab Changed"		 },
-	{ "scroll-up",				3, "Scroll Up"				 },
-	{ "scroll-down",			3, "Scroll Down"			 },
-	{ "scroll-left",			3, "Scroll Left"			 },
-	{ "scroll-right",			3, "Scroll Right"			 },
-	{ "scroll-up-end",			3, "Scroll Up End"			 },
-	{ "scroll-down-end",			3, "Scroll Down End"			 },
-	{ "scroll-left-end",			3, "Scroll Left End"			 },
-	{ "scroll-right-end",			3, "Scroll Right End"			 },
-	{ "dialog-ok",				3, "Dialog OK"				 },
-	{ "dialog-cancel",			3, "Dialog Cancel"			 },
-	{ "drag-start",				3, "Drag Start"				 },
-	{ "drag-accept",			3, "Drag Accept"			 },
-	{ "drag-fail",				3, "Drag Fail"				 },
-	{ "link-pressed",			3, "Link Pressed"			 },
-	{ "link-released",			3, "Link Released"			 },
-	{ "button-pressed",			3, "Button Pressed"			 },
-	{ "button-released",			3, "Button Released"			 },
-	{ "menu-click",				3, "Menu Click"				 },
-	{ "button-toggle-on",			3, "Button Toggle On"			 },
-	{ "button-toggle-off",			3, "Button Toggle Off"			 },
-	{ "expander-toggle-on",			3, "Expander Toggle On"			 },
-	{ "expander-toggle-off",		3, "Expander Toggle Off"		 },
-	{ "menu-popup",				3, "Menu Popup"				 },
-	{ "menu-popdown",			3, "Menu Popdown"			 },
-	{ "menu-replace",			3, "Menu Replace"			 },
-	{ "tooltip-popup",			3, "Tooltip Popup"			 },
-	{ "tooltip-popdown",			3, "Tooltip Popdown"			 },
-	{ "item-selected",			3, "Item Selected"			 },
+	{ "window-close",				3, 0, "Window Closed"				 },
+	{ "window-slide-out-sendto",			3, 1, "Window Sent to Other Desktop"		 },
+	{ "window-slide-out-shade",			3, 1, "Window Shaded"				 },
+	{ "window-slide-out",				3, 0, "Window Slided Out"			 },
+	{ "window-slide-in-taketo",			3, 1, "Window Taken to Other Desktop"		 },
+	{ "window-slide-in-unshade",			3, 1, "Window Unshaded"				 },
+	{ "window-slide-in",				3, 0, "Window Slided In"			 },
+	{ "window-slide",				3, 1, "Window Slided"				 },
+	{ "windows-slide",				3, 1, "Windows Slided"				 },
+	{ "window-stick-pinned",			3, 1, "Window Pinned"				 },
+	{ "window-stick-unfloat",			3, 1, "Window Tiled"				 },
+	{ "window-stick",				3, 1, "Window Stuck"				 },
+	{ "window-unstick-unpinned",			3, 1, "Window Unpinned"				 },
+	{ "window-unstick-float",			3, 1, "Window Floated"				 },
+	{ "window-unstick",				3, 1, "Window Unstuck"				 },
+	{ "window-raise-above",				3, 1, "Window Placed Above Other Windows"	 },
+	{ "window-raise",				3, 1, "Window Raised"				 },
+	{ "window-lower-below",				3, 1, "Window Placed Below Other Windows"	 },
+	{ "window-lower",				3, 1, "Window Lowered"				 },
+	{ "window-stack-raise-above",			3, 1, "Window Placed Above Other Windows"	 },
+	{ "window-stack-raise",				3, 1, "Window raised"				 },
+	{ "window-stack-lower-below",			3, 1, "Window Placed Below Other Windows"	 },
+	{ "window-stack-lower",				3, 1, "Window Lowered"				 },
+	{ "window-stack",				3, 1, "Window Restacked"			 },
+	{ "window-minimized-hidden",			3, 1, "Window Hidden"				 },
+	{ "window-minimized",				3, 0, "Window Minimized"			 },
+	{ "window-unminimized-unhidden",		3, 1, "Window Revealed"				 },
+	{ "window-unminimized",				3, 0, "Window Unminimized"			 },
+	{ "window-maximized-vertical",			3, 1, "Window Maximized Vertically"		 },
+	{ "window-maximized-horizontal",		3, 1, "Window Maximized Horizontally"		 },
+	{ "window-maximized-left",			3, 1, "Window Maximized to the Left"		 },
+	{ "window-maximized-right",			3, 1, "Window Maximized to the Right"		 },
+	{ "window-maximized-fullscreen",		3, 1, "Window Made Fullscreen"			 },
+	{ "window-maximized-filled",			3, 1, "Window Will Fill Available Area"		 },
+	{ "window-maximized",				3, 0, "Window Maximized"			 },
+	{ "window-unmaximized-vertical",		3, 1, "Window Restored Vertically"		 },
+	{ "window-unmaximized-horizontal",		3, 1, "Window Restored Horizontally"		 },
+	{ "window-unmaximized-left",			3, 1, "Window Restored from Left"		 },
+	{ "window-unmaximized-right",			3, 1, "Window Restored from Right"		 },
+	{ "window-unmaximized-fullscreen",		3, 1, "Window Restored from Fullscreen"		 },
+	{ "window-unmaximized-unfilled",		3, 1, "Window Restored from Filled"		 },
+	{ "window-unmaximized",				3, 0, "Window Unmaximized"			 },
+	{ "window-decorated",				3, 1, "Window Decorated"			 },
+	{ "window-undecorated",				3, 1, "Window Undecorated"			 },
+	{ "window-inactive-click",			3, 0, "Mouse Clicked in Inactive Window"	 },
+	{ "window-move-start-topleft",			3, 1, "Window Move Started From Top Left"	 },
+	{ "window-move-start-top",			3, 1, "Window Move Started From Top"		 },
+	{ "window-move-start-topright",			3, 1, "Window Move Started From Top Right"	 },
+	{ "window-move-start-right",			3, 1, "Window Move Started From Right"		 },
+	{ "window-move-start-bottomright",		3, 1, "Window Move Started From Bottom Right"	 },
+	{ "window-move-start-bottom",			3, 1, "Window Move Started From Bottom"		 },
+	{ "window-move-start-bottomleft",		3, 1, "Window Move Started From Bottom Left"	 },
+	{ "window-move-start-left",			3, 1, "Window Move Started From Left"		 },
+	{ "window-move-start-unsnap-unattract",		3, 1, "Stopped Attracting Move"			 },
+	{ "window-move-start-unsnap-unrepel",		3, 1, "Stopped Repelling Move"			 },
+	{ "window-move-start-unsnap",			3, 1, "Window Move Unsnapped"			 },
+	{ "window-move-start",				3, 0, "Window Move Started"			 },
+	{ "window-move-end-cancel",			3, 1, "Window Move Cancelled"			 },
+	{ "window-move-end-snap-attract",		3, 1, "Attracting Move"				 },
+	{ "window-move-end-snap-repel",			3, 1, "Repelling Move"				 },
+	{ "window-move-end-snap",			3, 1, "Window Move Snapped"			 },
+	{ "window-move-end",				3, 0, "Window Move Ended"			 },
+	{ "window-resize-start-topleft",		3, 1, "Window Resize Started From Top Left"	 },
+	{ "window-resize-start-top",			3, 1, "Window Resize Started From Top"		 },
+	{ "window-resize-start-topright",		3, 1, "Window Resize Started From Top Right"	 },
+	{ "window-resize-start-right",			3, 1, "Window Resize Started From Right"	 },
+	{ "window-resize-start-bottomright",		3, 1, "Window Resize Started From Bottom Right"	 },
+	{ "window-resize-start-bottom",			3, 1, "Window Resize Started From Bottom"	 },
+	{ "window-resize-start-bottomleft",		3, 1, "Window Resize Started From Bottom Left"	 },
+	{ "window-resize-start-left",			3, 1, "Window Resize Started From Left"		 },
+	{ "window-resize-start-unsnap-unattract",	3, 1, "Stopped Attracting Resize"		 },
+	{ "window-resize-start-unsnap-unrepel",		3, 1, "Stopped Repelling Resize"		 },
+	{ "window-resize-start-unsnap",			3, 1, "Window Resize Unsnapped"			 },
+	{ "window-resize-start",			3, 0, "Window Resize Started"			 },
+	{ "window-resize-end-cancel",			3, 1, "Window Resize Cancelled"			 },
+	{ "window-resize-end-snap-attract",		3, 1, "Attracting Resize"			 },
+	{ "window-resize-end-snap-repel",		3, 1, "Repelling Resize"			 },
+	{ "window-resize-end-snap",			3, 1, "Window Resize Snapped"			 },
+	{ "window-resize-end",				3, 0, "Window Resize Ended"			 },
+	{ "desktop-switch-up",				3, 1, "Desktop Above"				 },
+	{ "desktop-switch-left-up",			3, 1, "Desktop Above"				 },
+	{ "desktop-switch-left",			3, 0, "Desktop to the Left"			 },
+	{ "desktop-switch-down",			3, 1, "Desktop Below"				 },
+	{ "desktop-switch-right-down",			3, 1, "Desktop Below"				 },
+	{ "desktop-switch-right",			3, 0, "Desktop to the Right"			 },
+	{ "window-switch-left",				3, 1, "Window Switched Left"			 },
+	{ "window-switch-right",			3, 1, "Window Switched Right"			 },
+	{ "window-switch-zoom",				3, 1, "Window Zoomed"				 },
+	{ "window-switch",				3, 0, "Window Switched"				 },
+	{ "notebook-tab-changed",			3, 0, "Notebook Tab Changed"			 },
+	{ "scroll-up",					3, 0, "Scrolling Up"				 },
+	{ "scroll-down",				3, 0, "Scrolling Down"				 },
+	{ "scroll-left",				3, 0, "Scrolling to the Left"			 },
+	{ "scroll-right",				3, 0, "Scrolling to the Right"			 },
+	{ "scroll-up-end",				3, 0, "Scroll Up Reached End of Scroll-Bar"	 },
+	{ "scroll-down-end",				3, 0, "Scroll Down Reached End of Scroll-Bar"	 },
+	{ "scroll-left-end",				3, 0, "Scroll Left Reached End of Scroll-Bar"	 },
+	{ "scroll-right-end",				3, 0, "Scroll Right Reached End of Scroll-Bar"	 },
+	{ "dialog-ok",					3, 0, "Dialog Acknowledged"			 },
+	{ "dialog-cancel",				3, 0, "Dialog Cancelled"			 },
+	{ "drag-start",					3, 0, "Drag Started"				 },
+	{ "drag-accept",				3, 0, "Drag Accepted"				 },
+	{ "drag-fail",					3, 0, "Drag Failed"				 },
+	{ "link-pressed",				3, 0, "Link Pressed"				 },
+	{ "link-released",				3, 0, "Link Released"				 },
+	{ "button-pressed",				3, 0, "Button Pressed"				 },
+	{ "button-released",				3, 0, "Button Released"				 },
+	{ "menu-click",					3, 0, "Menu Clicked"				 },
+	{ "button-toggle-on",				3, 0, "Button Toggled On"			 },
+	{ "button-toggle-off",				3, 0, "Button Toggled Off"			 },
+	{ "expander-toggle-on",				3, 0, "Expander Activated"			 },
+	{ "expander-toggle-off",			3, 0, "Expander Deactivated"			 },
+	{ "menu-popup",					3, 0, "Menu Popup"				 },
+	{ "menu-popdown",				3, 0, "Menu Popdown"				 },
+	{ "menu-replace",				3, 0, "Menu Replace"				 },
+	{ "tooltip-popup",				3, 0, "Tooltip Popup"				 },
+	{ "tooltip-popdown",				3, 0, "Tooltip Popdown"				 },
+	{ "item-selected",				3, 0, "Item Selected"				 },
+	{ "desktop-mode-decrease-border",		3, 1, "Decrease Window Border"			 },
+	{ "desktop-mode-decrease-margin",		3, 1, "Decrease Window Margin"			 },
+	{ "desktop-mode-decrease-width-tiled",		3, 1, "Decrease Master Width Factor"		 },
+	{ "desktop-mode-decrease-count-grid-col",	3, 1, "Decrease Column Count"			 },
+	{ "desktop-mode-decrease-count-grid-row",	3, 1, "Decrease Row Count"			 },
+	{ "desktop-mode-decrease-count-grid",		3, 1, "Decrease Grid Count"			 },
+	{ "desktop-mode-decrease-count-tiled",		3, 1, "Decrease Master Count"			 },
+	{ "desktop-mode-decrease-count",		3, 1, "Decrease View Count"			 },
+	{ "desktop-mode-increase-border",		3, 1, "Increase Window Border"			 },
+	{ "desktop-mode-increase-margin",		3, 1, "Increase Window Margin"			 },
+	{ "desktop-mode-increase-width-tiled",		3, 1, "Increase Master Width Factor"		 },
+	{ "desktop-mode-increase-count-grid-col",	3, 1, "Increase Column Count"			 },
+	{ "desktop-mode-increase-count-grid-row",	3, 1, "Increase Row Count"			 },
+	{ "desktop-mode-increase-count-grid",		3, 1, "Increase Grid Count"			 },
+	{ "desktop-mode-increase-count-tiled",		3, 1, "Increase Master Count"			 },
+	{ "desktop-mode-increase-count",		3, 1, "Increase View Count"			 },
+	{ "desktop-mode-tiled-right",			3, 1, "Arrange Tiled with Right Master"		 },
+	{ "desktop-mode-tiled-left",			3, 1, "Arrange Tiled with Left Master"		 },
+	{ "desktop-mode-tiled-top",			3, 1, "Arrange Tiled with Top Master"		 },
+	{ "desktop-mode-tiled-bottom",			3, 1, "Arrange Tiled with Bottom Master"	 },
+	{ "desktop-mode-tiled",				3, 1, "Arrange Tiled"				 },
+	{ "desktop-mode-floating",			3, 1, "Arrange Floating"			 },
+	{ "desktop-mode-grid",				3, 1, "Arrange Grid"				 },
+	{ "desktop-mode-monocle",			3, 1, "Arrange Monocle"				 },
+	{ "desktop-mode",				3, 1, "Arrangement Changed"			 },
+	{ "desktop-monitor-switch-left-down",		3, 1, "Monitor below"				 },
+	{ "desktop-monitor-switch-left",		3, 1, "Monitor to the left"			 },
+	{ "desktop-monitor-switch-right-up",		3, 1, "Monitor above"				 },
+	{ "desktop-monitor-switch-right",		3, 1, "Monitor to the right"			 },
+	{ "desktop-monitor-switch",			3, 1, "Monitor changed"				 },
+	{ "desktop-showing-hideall-decorations",	3, 1, "Undecorate Tiled Windows"		 },
+	{ "desktop-showing-hideall-struts",		3, 1, "Hide All Docks and Panels"		 },
+	{ "desktop-showing-hideall",			3, 1, "Showing Desktop"				 },
+	{ "desktop-showing-showall-decorations",	3, 1, "Decorate Tiled Windows"			 },
+	{ "desktop-showing-showall-struts",		3, 1, "Show All Docks and Panels"		 },
+	{ "desktop-showing-showall",			3, 1, "Not Showing Desktop"			 },
+	{ "desktop-showing",				3, 1, "Desktop Showing"				 },
+	{ "desktop-view-flip",				3, 1, "View Flipped"				 },
+	{ "desktop-view-rotate",			3, 1, "View Rotated Clockwise"			 },
+	{ "desktop-view-unrotate",			3, 1, "View Rotated Counter-Clockwise"		 },
+	{ "desktop-view",				3, 1, "View Changed"				 },
+	{ "desktop-windows-flip",			3, 1, "Windows Flipped"				 },
+	{ "desktop-windows-rotate",			3, 1, "Windows Rotated Clockwise"		 },
+	{ "desktop-windows-unrotate",			3, 1, "Windows Rotated Counter-Clockwise"	 },
+	{ "desktop-windows",				3, 1, "Windows Changed"				 },
+	{ "desktop-zone-flip",				3, 1, "Zone Flipped"				 },
+	{ "desktop-zone-rotate",			3, 1, "Zone Rotated Clockwise"			 },
+	{ "desktop-zone-unrotate",			3, 1, "Zone Rotated Counter-Clockwise"		 },
+	{ "desktop-zone",				3, 1, "Zone Changed"				 },
 	/* Standard Game Sounds */
-	{ "game-over-winner",			4, "Game-Over (Winner)"			 },
-	{ "game-over-loser",			4, "Game-Over (Loser)"			 },
-	{ "game-card-shuffle",			4, "Card Shuffle"			 },
-	{ "game-human-move",			4, "Human Move"				 },
-	{ "game-computer-move",			4, "Computer Move"			 },
-	{ NULL,					0, NULL }
+	{ "game-over-winner",				4, 0, "Game-Over (Winner)"			 },
+	{ "game-over-loser",				4, 0, "Game-Over (Loser)"			 },
+	{ "game-card-shuffle",				4, 0, "Cards Shuffled"				 },
+	{ "game-human-move",				4, 0, "Human Move"				 },
+	{ "game-computer-move",				4, 0, "Computer Move"				 },
+	{ NULL,						0, 0, NULL					 }
 };
 
 GHashTable *stdevents = NULL;
@@ -741,7 +892,12 @@ parse_file(char *path)
 static const struct Sound *
 is_standard(const char *eventid)
 {
-	return (g_hash_table_lookup(stdevents, eventid));
+	struct Sound *sound;
+
+	if ((sound = g_hash_table_lookup(stdevents, eventid)))
+		if (sound->extended && !options.extended)
+			sound = NULL;
+	return (sound);
 }
 
 static void
@@ -964,10 +1120,12 @@ lookup_theme(char *themes, const char *theme)
 		EPRINTF("called with a null theme!\n");
 		return;
 	}
+#if 0	/* what do we care? */
 	if (!strcmp(theme, "freedesktop")) {
 		EPRINTF("called with a fallback theme '%s'\n", theme);
 		return;
 	}
+#endif
 	/* break inheritance loop */
 	if (on_list(themes, theme)) {
 		EPRINTF("theme %s already on list '%s'\n", theme, themes);
@@ -1314,6 +1472,7 @@ lookup_file(const char *name, const char *theme_list)
 										free(tlist);
 										return (found_one);
 									}
+#if 0
 									strcpy(p, ".sound");
 									DPRINTF(1, "checking '%s'\n", path);
 									if (!stat(path, &st) && (found_one |= output_path(name, path)) && !options.all) {
@@ -1323,6 +1482,7 @@ lookup_file(const char *name, const char *theme_list)
 										free(tlist);
 										return (found_one);
 									}
+#endif
 									free(path);
 									path = NULL;
 								}
@@ -1604,9 +1764,12 @@ list_sound_events(void)
 
 			len = strlen(event->key);
 
-			for (s = StandardSounds; s && s->eventid; s++)
+			for (s = StandardSounds; s && s->eventid; s++) {
+				if (s->extended && !options.extended)
+					continue;
 				if (!strcmp(event->key, s->eventid) || ((p = strstr(s->eventid, event->key)) == s->eventid && (p[len] == '-' || p[len] == '\0')))
 					break;
+			}
 			if (!s->eventid) {
 				DPRINTF(1, "skipping non-standard sound '%s[%d]'\n", event->key, context);
 				continue;
@@ -1727,6 +1890,8 @@ do_listem(int argc, char *argv[])
 	theme_list = lookup_themes(); /* XXX */
 	options.headers = 1;
 	for (sound = StandardSounds; sound && sound->eventid; sound++) {
+		if (sound->extended && !options.extended)
+			continue;
 		if (context != -1 && sound->context != context)
 			continue;
 		if (!options.headers)
@@ -2337,6 +2502,7 @@ main(int argc, char *argv[])
 			{"profile",		required_argument,	NULL,	'P'},
 			{"standard",		no_argument,		NULL,	'S'},
 			{"extensions",		no_argument,		NULL,	'x'},
+			{"extended",		no_argument,		NULL,   'X'},
 			{"missing",		no_argument,		NULL,	'M'},
 			{"headers",		no_argument,		NULL,	'r'},
 			{"deref",		no_argument,		NULL,	'd'},
@@ -2356,10 +2522,10 @@ main(int argc, char *argv[])
 		};
 		/* *INDENT-ON* */
 
-		c = getopt_long_only(argc, argv, "wnlaotOTN:P:SxMrdc:u:m:i:I:D::v::hVCH?", long_options,
+		c = getopt_long_only(argc, argv, "wnlaotOTN:P:SxXMrdc:u:m:i:I:D::v::hVCH?", long_options,
 				     &option_index);
 #else				/* _GNU_SOURCE */
-		c = getopt(argc, argv, "wnlaotOTN:P:SxMrdc:u:m:i:I:DvhVCH?");
+		c = getopt(argc, argv, "wnlaotOTN:P:SxXMrdc:u:m:i:I:DvhVCH?");
 #endif				/* _GNU_SOURCE */
 		if (c == -1) {
 			if (options.debug)
@@ -2436,6 +2602,9 @@ main(int argc, char *argv[])
 			options.extensions = 1;
 			options.standard = 0;
 			options.missing = 0;
+			break;
+		case 'X':	/* -X, --extended */
+			options.extended = 1;
 			break;
 		case 'M':	/* -M, --missing */
 			options.missing = 1;
