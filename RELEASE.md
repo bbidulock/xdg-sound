@@ -1,15 +1,16 @@
-[xdg-sound -- release notes.  2020-04-20]: #
+[xdg-sound -- release notes.  2020-05-09]: #
 
-Preliminary Release 0.9
-=======================
+Stable Release 1.0
+==================
 
-This is a preliminary release of the xdg-sound package that provides
+This is the first stable release of the xdg-sound package that provides
 "C"-language programs and utilities for working with (locating and
 playing) event sound files from XDG sound themes.
 
-This release is a preliminary release that provides the location tools
-and the ability to play the file; however, display of sound data is not
-yet supported.
+This release is a stable release that provides the location tools and
+the ability to play the file; however, display of sound data is not yet
+supported.  The ability to list and play files is mature and very
+usable.
 
 Included in the release is an autoconf tarball for building the package
 from source.  See the [NEWS](NEWS) and [TODO](TODO) file in the release

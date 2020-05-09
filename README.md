@@ -1,9 +1,9 @@
-[xdg-sound -- read me first file.  2020-04-20]: #
+[xdg-sound -- read me first file.  2020-05-09]: #
 
 xdg-sound
 ===============
 
-Package `xdg-sound-0.9` was released under GPLv3 license 2020-04-20.
+Package `xdg-sound-1.0` was released under GPLv3 license 2020-05-09.
 
 This package contains "C"-language programs and utilities for working
 with (locating and playing) event sound files from XDG sound themes.
@@ -19,7 +19,7 @@ wrapper scripts.
 Release
 -------
 
-This is the `xdg-sound-0.9` package, released 2020-04-20.  This
+This is the `xdg-sound-1.0` package, released 2020-05-09.  This
 release, and the latest version, can be obtained from [GitHub][1], using
 a command such as:
 
@@ -87,16 +87,16 @@ Report issues on GitHub [here][2].
 
 [1]: https://github.com/bbidulock/xdg-sound
 [2]: https://github.com/bbidulock/xdg-sound/issues
-[3]: https://github.com/bbidulock/xdg-sound/blob/0.9/NEWS
-[4]: https://github.com/bbidulock/xdg-sound/blob/0.9/ChangeLog
-[5]: https://github.com/bbidulock/xdg-sound/blob/0.9/TODO
-[6]: https://github.com/bbidulock/xdg-sound/blob/0.9/COMPLIANCE
-[7]: https://github.com/bbidulock/xdg-sound/blob/0.9/INSTALL
-[8]: https://github.com/bbidulock/xdg-sound/blob/0.9/LICENSE
-[9]: https://github.com/bbidulock/xdg-sound/blob/0.9/COPYING
-[10]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-play.pod
-[11]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-sound-which.pod
-[12]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-sound-whereis.pod
-[13]: https://github.com/bbidulock/xdg-sound/blob/0.9/man/xdg-sound-list.pod
+[3]: https://github.com/bbidulock/xdg-sound/blob/1.0/NEWS
+[4]: https://github.com/bbidulock/xdg-sound/blob/1.0/ChangeLog
+[5]: https://github.com/bbidulock/xdg-sound/blob/1.0/TODO
+[6]: https://github.com/bbidulock/xdg-sound/blob/1.0/COMPLIANCE
+[7]: https://github.com/bbidulock/xdg-sound/blob/1.0/INSTALL
+[8]: https://github.com/bbidulock/xdg-sound/blob/1.0/LICENSE
+[9]: https://github.com/bbidulock/xdg-sound/blob/1.0/COPYING
+[10]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-play.pod
+[11]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-sound-which.pod
+[12]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-sound-whereis.pod
+[13]: https://github.com/bbidulock/xdg-sound/blob/1.0/man/xdg-sound-list.pod
 
 [ vim: set ft=markdown sw=4 tw=72 nocin nosi fo+=tcqlorn spell: ]: #

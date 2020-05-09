@@ -1,5 +1,58 @@
 # created with git log --stat=76 -M -C -500|fmt -sct -w80
 
+commit 4e8879e980fb644f7da9582cad175f1b16d37c57
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sat May 9 04:16:39 2020 -0600
+
+    document -X,--extended option
+
+ man/xdg-play.pod          | 6 ++++++
+ man/xdg-sound-list.pod    | 6 ++++++
+ man/xdg-sound-whereis.pod | 6 ++++++
+ man/xdg-sound-which.pod   | 6 ++++++
+ 4 files changed, 24 insertions(+)
+
+commit 9c50f971b88f9af06e4f50d63a06a14c3a207e93
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Sat May 9 04:13:32 2020 -0600
+
+    some improvements to functionality
+
+    - distinguish extended standard event ids from strictly standard ones
+    - add -X,--extended option to choose whether to include them in standard
+      or not
+    - expand the extended standard set of event identifiers
+    - allow freedesktop theme to be inserted into inheritance list
+    - do not stop on .sound files when looking for sound files
+
+ src/xdg-play.c          | 507 +++++++++++++++++++++++++++++---------------
+ src/xdg-sound-list.c    | 507 +++++++++++++++++++++++++++++---------------
+ src/xdg-sound-whereis.c | 507 +++++++++++++++++++++++++++++---------------
+ src/xdg-sound-which.c   | 507 +++++++++++++++++++++++++++++---------------
+ 4 files changed, 1352 insertions(+), 676 deletions(-)
+
+commit d688aad527d1c5f6b3df40066a11d4caa1946cba
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Mon Apr 20 22:08:03 2020 -0600
+
+    redefine extensions somewhat (better fallback)
+
+ src/xdg-play.c          | 26 +++++++++++++++-----------
+ src/xdg-sound-list.c    | 26 +++++++++++++++-----------
+ src/xdg-sound-whereis.c | 26 +++++++++++++++-----------
+ src/xdg-sound-which.c   | 26 +++++++++++++++-----------
+ 4 files changed, 60 insertions(+), 44 deletions(-)
+
+commit f7f25c59ef9ab4418a083643af80bb8407be710d
+Author: Brian Bidulock <bidulock@openss7.org>
+Date:   Mon Apr 20 01:36:27 2020 -0600
+
+    post release update
+
+ ChangeLog | 10 ++++++++++
+ NEWS      |  3 ++-
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
 commit 906cbfbf632ee8c8982b1c272e62c5d4c41c712a
 Author: Brian Bidulock <bidulock@openss7.org>
 Date:   Mon Apr 20 01:29:26 2020 -0600
